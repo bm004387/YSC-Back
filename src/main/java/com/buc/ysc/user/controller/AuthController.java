@@ -1,0 +1,69 @@
+package com.buc.ysc.user.controller;
+
+import com.buc.ysc.security.SessionManager;
+import com.buc.ysc.user.service.AuthService;
+import com.buc.ysc.user.vo.record.UserIdCheckResponse;
+import com.buc.ysc.user.vo.reponse.LoginResponse;
+import com.buc.ysc.user.vo.reponse.SignupResponse;
+import com.buc.ysc.user.vo.record.LoginRequest;
+import com.buc.ysc.user.vo.record.SignupRequest;
+import com.buc.ysc.util.MsgUtil;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+    private final SessionManager sessionManager;
+    private final MsgUtil msgUtil;
+
+    public AuthController(AuthService authService, SessionManager sessionManager, MsgUtil msgUtil) {
+        this.authService = authService;
+        this.sessionManager = sessionManager;
+        this.msgUtil = msgUtil;
+    }
+
+    /**
+     * 회원가입
+     */
+    @PostMapping("/signup")
+    public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request));
+    }
+
+    @GetMapping("/check-user-id")
+    public ResponseEntity<UserIdCheckResponse> checkUserId(@RequestParam String userId) {
+        return ResponseEntity.ok(authService.checkUserId(userId.trim()));
+    }
+
+    /**
+     * 로그인
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * 로그아웃
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+
+        if (authorization != null &&authorization.startsWith("Bearer ")) {
+            String token = authorization.substring(7);
+            sessionManager.deleteSession(token);
+        }
+
+        return ResponseEntity.ok(java.util.Map.of("message",msgUtil.getMsg("AUTH", "007"))
+        );
+    }
+}

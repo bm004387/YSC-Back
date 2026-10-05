@@ -22,20 +22,23 @@
 
     <!-- 회원가입 -->
     <insert id="insertUser" parameterType="com.buc.ysc.user.vo.request.UserVO">
-        INSERT INTO users (
-                            user_id,
-                            passwd,
-                            user_nm,
-                            role,
-                            frst_reg_emp_no
-                            )
-                            VALUES (
-                            #{userId},
-                            #{passwd},
-                            #{userNm},
-                            'USER',
-                            #{firstRegEmpNo}
-                            )
+        INSERT INTO users
+                   (
+                     user_id
+                   , passwd
+                   , user_nm
+                   , created_at
+                   , role
+                   , frst_reg_emp_no
+                   )
+        VALUES     (
+                     #{userId}
+                   , #{passwd}
+                   , #{userNm}
+                   , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+                   , 'USER'
+                   , #{userNm}
+                   )
 
     </insert>
 

@@ -9,15 +9,16 @@
            AND USE_YN = 'Y'
     </select>
 
-    <select id="getMsgList" resultType="com.buc.ysc.common.msg.vo.MsgVO" parameterType="String">
+    <select id="getMsgList" resultType="com.buc.ysc.common.msg.vo.MsgVO">
         SELECT
-               MENU_ID
-             , MSG_CD
-             , MSG_TP
-             , MSG_CN
-          FROM TB_MSG
-         WHERE MENU_ID = #{menuId}
-           AND USE_YN = 'Y'
-         ORDER BY MSG_CD
+                MENU_ID
+             ,  MSG_CD
+             ,  MSG_TP
+             ,  MSG_CN
+             ,  USE_YN
+             ,  MSG_DESC
+          FROM  TB_MSG
+         WHERE  USE_YN = 'Y'
+         ORDER  BY MENU_ID, MSG_CD
     </select>
 </mapper>

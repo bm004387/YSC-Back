@@ -1,15 +1,15 @@
-package com.buc.ysc.user.service.impl;
+package com.buc.ysc.auth.service.impl;
 
 import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.security.UserSession;
 import com.buc.ysc.user.mapper.UserMapper;
-import com.buc.ysc.user.service.AuthService;
-import com.buc.ysc.user.vo.record.UserIdCheckResponse;
-import com.buc.ysc.user.vo.reponse.LoginResponse;
-import com.buc.ysc.user.vo.reponse.SignupResponse;
-import com.buc.ysc.user.vo.reponse.UserInfoResponse;
-import com.buc.ysc.user.vo.record.LoginRequest;
-import com.buc.ysc.user.vo.record.SignupRequest;
+import com.buc.ysc.auth.service.AuthService;
+import com.buc.ysc.auth.vo.record.UserIdCheckResponse;
+import com.buc.ysc.auth.vo.response.LoginResponse;
+import com.buc.ysc.auth.vo.response.SignupResponse;
+import com.buc.ysc.auth.vo.response.UserInfoResponse;
+import com.buc.ysc.auth.vo.record.LoginRequest;
+import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.util.MsgUtil;
 import org.springframework.http.HttpStatus;

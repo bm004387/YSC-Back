@@ -14,53 +14,108 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MsgUtil {
 
-    private static final String MSG_KEY_PREFIX = "MSG:";
+    private static final String MSG_KEY = "MSG:ALL";
+
     private final MsgMapper msgMapper;
-
-
     private final RedisTemplate<String, String> msgRedisTemplate;
 
-
+    /**
+     * 메시지 1건 조회
+     *
+     * @param menuId 메뉴 ID
+     * @param msgCd  메시지 코드
+     * @return 메시지
+     */
     public String getMsg(String menuId, String msgCd) {
 
-        Map<String, String> msgMap = getMsgMap(menuId);
-        String msg = msgMap.get(msgCd);
+        String field = menuId + ":" + msgCd;
 
-        if (msg == null || msg.isBlank()) {
-            return menuId + "_" + msgCd;
+        // 1. Redis에서 메시지 조회
+        Object redisMsg = msgRedisTemplate.opsForHash().get(MSG_KEY, field);
+
+        if (redisMsg != null && !redisMsg.toString().isBlank()) {
+            return redisMsg.toString();
         }
 
-        return msg;
+        // 2. 전체 메시지가 Redis에 없으면 DB에서 전체 적재
+        if (!Boolean.TRUE.equals(msgRedisTemplate.hasKey(MSG_KEY))) {
+            loadMsgToRedis();
+
+            // 3. 다시 조회
+            redisMsg = msgRedisTemplate.opsForHash().get(MSG_KEY, field);
+
+            if (redisMsg != null && !redisMsg.toString().isBlank()) {
+                return redisMsg.toString();
+            }
+        }
+
+        // 4. 메시지가 없으면 코드 반환
+        return menuId + "_" + msgCd;
     }
 
-    public Map<String, String> getMsgMap(String menuId) {
+    /**
+     * 전체 메시지 조회
+     * 화면에서 사용하는 API에서 호출
+     * @return 전체 메시지
+     */
+    public Map<String, String> getAllMsg() {
 
-        String key = MSG_KEY_PREFIX + menuId;
+        // 1. Redis에서 전체 메시지 조회
+        Map<Object, Object> redisMap = msgRedisTemplate.opsForHash().entries(MSG_KEY);
 
-        // 1. Redis에서 메뉴 전체 메시지 조회
-        Map<Object, Object> redisMap = msgRedisTemplate.opsForHash().entries(key);
         if (redisMap != null && !redisMap.isEmpty()) {
-            Map<String, String> msgMap = new LinkedHashMap<>();
-            for (Map.Entry<Object, Object> entry : redisMap.entrySet()) {
-                msgMap.put(String.valueOf(entry.getKey()),String.valueOf(entry.getValue()));
-            }
-            return msgMap;
+            return convertToStringMap(redisMap);
         }
 
-        // 2. Redis에 없으면 DB 조회
-        List<MsgVO> msgList = msgMapper.getMsgList(menuId);
+        // 2. Redis에 없으면 DB에서 전체 메시지 조회 후 Redis 적재
+        loadMsgToRedis();
+
+        // 3. Redis에서 다시 전체 메시지 조회
+        redisMap = msgRedisTemplate.opsForHash().entries(MSG_KEY);
+
+        return convertToStringMap(redisMap);
+    }
+
+    /**
+     * DB의 전체 메시지를 Redis에 적재
+     */
+    public void loadMsgToRedis() {
+
+        List<MsgVO> msgList = msgMapper.getMsgList();
+
+        if (msgList == null || msgList.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> redisData = new LinkedHashMap<>();
+
+        for (MsgVO msg : msgList) {
+
+            String field = msg.getMenuId() + ":" + msg.getMsgCd();
+
+            redisData.put(field, msg.getMsgCn());
+        }
+
+        // 기존 전체 메시지 삭제
+        msgRedisTemplate.delete(MSG_KEY);
+
+        // 전체 메시지 저장
+        msgRedisTemplate.opsForHash().putAll(MSG_KEY, redisData);
+    }
+
+    /**
+     * Redis Object Map을 String Map으로 변환
+     */
+    private Map<String, String> convertToStringMap(Map<Object, Object> redisMap) {
 
         Map<String, String> msgMap = new LinkedHashMap<>();
 
-        for (MsgVO msg : msgList) {
-            msgMap.put(msg.getMsgCd(), msg.getMsgCn());
+        if (redisMap == null || redisMap.isEmpty()) {
+            return msgMap;
         }
 
-        // 3. Redis에 메뉴 전체 메시지 저장
-        if (!msgMap.isEmpty()) {
-            Map<String, String> redisData = new LinkedHashMap<>(msgMap);
-
-            msgRedisTemplate.opsForHash().putAll(key, redisData);
+        for (Map.Entry<Object, Object> entry : redisMap.entrySet()) {
+            msgMap.put(String.valueOf(entry.getKey()), String.valueOf(entry.getValue()));
         }
 
         return msgMap;

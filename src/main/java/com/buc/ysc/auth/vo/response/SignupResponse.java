@@ -1,4 +1,4 @@
-package com.buc.ysc.user.vo.reponse;
+package com.buc.ysc.auth.vo.response;
 
 public record SignupResponse(
         String message,

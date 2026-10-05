@@ -11,4 +11,6 @@ public class MsgVO {
     private String msgCd;
     private String msgTp;
     private String msgCn;
+    private String useYn;
+    private String msgDesc;
 }

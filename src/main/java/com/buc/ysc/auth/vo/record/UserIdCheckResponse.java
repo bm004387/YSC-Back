@@ -1,4 +1,4 @@
-package com.buc.ysc.user.vo.record;
+package com.buc.ysc.auth.vo.record;
 
 public record UserIdCheckResponse(
         boolean available,

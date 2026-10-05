@@ -1,4 +1,4 @@
-package com.buc.ysc.user.vo.record;
+package com.buc.ysc.auth.vo.record;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

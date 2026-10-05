@@ -26,6 +26,9 @@
                      USER_ID
                    , PASSWD
                    , USER_NM
+                   , HP_NO
+                   , ADDR
+                   , DTL_ADDR
                    , CREATED_AT
                    , ROLE
                    , FRST_REG_EMP_NO
@@ -37,6 +40,9 @@
                      #{userId}
                    , #{passwd}
                    , #{userNm}
+                   , #{hpNo}
+                   , #{addr}
+                   , #{dtlAddr}
                    , CURRENT_TIMESTAMP
                    , 'USER'
                    , #{userId}

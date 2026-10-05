@@ -5,6 +5,7 @@ import com.buc.ysc.auth.vo.request.SmsSendRequest;
 import com.buc.ysc.auth.vo.request.SmsVerifyRequest;
 import com.buc.ysc.auth.vo.response.SmsResponse;
 import com.buc.ysc.util.MsgUtil;
+import com.solapi.sdk.message.dto.response.MultipleDetailMessageSentResponse;
 import com.solapi.sdk.message.model.Message;
 import com.solapi.sdk.message.service.DefaultMessageService;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +51,11 @@ public class SmsServiceImpl implements SmsService {
             message.setTo(phone);
             message.setText("[YSC] 인증번호는 " + code + "입니다.");
 
-            solapiMessageService.send(message, null);
+            MultipleDetailMessageSentResponse response = solapiMessageService.send(message, null);
+
+            System.out.println("SMS 발송 성공!");
+            System.out.println("Group ID: " + response.getGroupInfo().getGroupId());
+            System.out.println("Message Count: " + response.getGroupInfo().getCount());
 
             return new SmsResponse(true,  msgUtil.getMsg("SMS", "001"));
 

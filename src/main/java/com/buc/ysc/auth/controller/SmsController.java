@@ -22,23 +22,17 @@ public class SmsController {
      * SMS 인증번호 발송
      */
     @PostMapping("/send")
-    public ResponseEntity<SmsResponse> send(
-            @Valid @RequestBody SmsSendRequest request) {
+    public ResponseEntity<SmsResponse> send(@Valid @RequestBody SmsSendRequest request) {
 
-        return ResponseEntity.ok(
-                smsService.send(request)
-        );
+        return ResponseEntity.ok(smsService.send(request));
     }
 
     /**
      * SMS 인증번호 확인
      */
     @PostMapping("/verify")
-    public ResponseEntity<SmsResponse> verify(
-            @Valid @RequestBody SmsVerifyRequest request) {
+    public ResponseEntity<SmsResponse> verify(@Valid @RequestBody SmsVerifyRequest request) {
 
-        return ResponseEntity.ok(
-                smsService.verify(request)
-        );
+        return ResponseEntity.ok(smsService.verify(request));
     }
 }

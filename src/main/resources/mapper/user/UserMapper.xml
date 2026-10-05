@@ -6,7 +6,7 @@
         SELECT
                USER_ID
              , PASSWD
-             , USER_NAME
+             , USER_NM
              , ROLE
           FROM USERS
          WHERE USER_ID = #{userId}
@@ -25,14 +25,14 @@
         INSERT INTO users (
                             user_id,
                             passwd,
-                            user_name,
+                            user_nm,
                             role,
-                            first_reg_emp_no
+                            frst_reg_emp_no
                             )
                             VALUES (
                             #{userId},
                             #{passwd},
-                            #{userName},
+                            #{userNm},
                             'USER',
                             #{firstRegEmpNo}
                             )

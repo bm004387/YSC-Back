@@ -15,7 +15,7 @@ public record SignupRequest(
 
         @NotBlank
         @Size(max = 100)
-        String userName
+        String userNm
 
 ) {
 }

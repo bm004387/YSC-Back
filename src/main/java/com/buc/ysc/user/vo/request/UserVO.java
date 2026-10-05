@@ -9,7 +9,7 @@ public class UserVO {
 
     private String userId;
     private String passwd;
-    private String userName;
+    private String userNm;
     private String role;
 
     private String firstRegEmpNo;

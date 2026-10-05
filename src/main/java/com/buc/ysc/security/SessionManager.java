@@ -53,7 +53,7 @@ public class SessionManager {
         // Redis에 저장할 세션 정보
         Map<String, String> values = Map.of(
                 "userId", session.userId(),
-                "userName", session.userName(),
+                "userNm", session.userNm(),
                 "role", session.role()
         );
 
@@ -93,7 +93,7 @@ public class SessionManager {
             // Redis에 저장된 사용자 정보로 세션 생성
             UserSession session = new UserSession(
                     values.get("userId").toString(),
-                    values.get("userName").toString(),
+                    values.get("userNm").toString(),
                     values.get("role").toString()
             );
 

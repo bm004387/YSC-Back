@@ -2,12 +2,12 @@ package com.buc.ysc.security;
 
 /**
  * @param userId
- * @param userName
+ * @param userNm
  * @param role
  */
 public record UserSession(
         String userId,
-        String userName,
+        String userNm,
         String role
 ) {
 }

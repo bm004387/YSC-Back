@@ -50,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUserId(request.userId());
         // 입력받은 비밀번호를 Bcrypt로 암호화
         user.setPasswd(passwordEncoder.encode(request.passwd()));
-        user.setUserName(request.userName());
+        user.setUserNm(request.userNm());
         user.setRole("USER");
         user.setFirstRegEmpNo("TEST0001");
         userMapper.insertUser(user);
@@ -97,7 +97,7 @@ public class AuthServiceImpl implements AuthService {
         // 4. Redis 세션 생성
         UserSession session = new UserSession(
                                                 user.getUserId(),
-                                                user.getUserName(),
+                                                user.getUserNm(),
                                                 user.getRole()
                                         );
 
@@ -106,7 +106,7 @@ public class AuthServiceImpl implements AuthService {
         // 5. 사용자 정보 생성
         UserInfoResponse userInfo = new UserInfoResponse(
                                                         user.getUserId(),
-                                                        user.getUserName(),
+                                                        user.getUserNm(),
                                                         user.getRole()
                                                         );
 

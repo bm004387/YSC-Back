@@ -1,5 +1,6 @@
 package com.buc.ysc.auth.service.impl;
 
+import com.buc.ysc.auth.vo.response.SmsResponse;
 import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.security.UserSession;
 import com.buc.ysc.user.mapper.UserMapper;

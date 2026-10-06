@@ -8,5 +8,8 @@ public interface UserMapper {
 
     int existsByUserId(String userId);
 
+    boolean existsHpNo(String hpNo);
+
+
     void insertUser(UserVO userId);
 }

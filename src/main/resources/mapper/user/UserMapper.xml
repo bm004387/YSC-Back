@@ -23,6 +23,15 @@
          WHERE USER_ID = #{userId}
     </select>
 
+    <select id="existsHpNo" parameterType="string" resultType="boolean">
+        SELECT CASE WHEN COUNT(*) > 0 THEN TRUE
+                    ELSE FALSE
+                     END
+          FROM TB_USER
+         WHERE HP_NO = #{hpNo}
+
+    </select>
+
     <!-- 회원가입 -->
     <insert id="insertUser" parameterType="com.buc.ysc.user.vo.request.UserVO">
         /* com.buc.ysc.user.mapper.UserMapper.insertUser 사용자정보 저장 */

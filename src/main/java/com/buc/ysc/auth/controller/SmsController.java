@@ -23,7 +23,6 @@ public class SmsController {
      */
     @PostMapping("/send")
     public ResponseEntity<SmsResponse> send(@Valid @RequestBody SmsSendRequest request) {
-
         return ResponseEntity.ok(smsService.send(request));
     }
 

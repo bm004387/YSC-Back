@@ -3,7 +3,9 @@ package com.buc.ysc.auth.service.impl;
 import com.buc.ysc.auth.service.SmsService;
 import com.buc.ysc.auth.vo.request.SmsSendRequest;
 import com.buc.ysc.auth.vo.request.SmsVerifyRequest;
+import com.buc.ysc.auth.vo.response.SignupResponse;
 import com.buc.ysc.auth.vo.response.SmsResponse;
+import com.buc.ysc.user.mapper.UserMapper;
 import com.buc.ysc.util.MsgUtil;
 import com.solapi.sdk.message.dto.response.MultipleDetailMessageSentResponse;
 import com.solapi.sdk.message.model.Message;
@@ -24,14 +26,16 @@ public class SmsServiceImpl implements SmsService {
     private final StringRedisTemplate redisTemplate;
     private final DefaultMessageService solapiMessageService;
     private final MsgUtil msgUtil;
+    private final UserMapper userMapper;
 
     @Value("${solapi.sender}")
     private String sender;
 
-    public SmsServiceImpl(StringRedisTemplate redisTemplate, DefaultMessageService solapiMessageService, MsgUtil msgUtil) {
+    public SmsServiceImpl(StringRedisTemplate redisTemplate, DefaultMessageService solapiMessageService, MsgUtil msgUtil, UserMapper userMapper) {
         this.redisTemplate = redisTemplate;
         this.solapiMessageService = solapiMessageService;
         this.msgUtil = msgUtil;
+        this.userMapper = userMapper;
     }
 
     @Override
@@ -40,6 +44,10 @@ public class SmsServiceImpl implements SmsService {
         String hpNo = normalizePhone(request.hpNo());
         String code = generateCode();
         String key = SMS_KEY_PREFIX + hpNo;
+
+        if (userMapper.existsHpNo(hpNo)) {
+            return new SmsResponse(false, msgUtil.getMsg("SIGNUP", "005"));
+        }
 
         try {
             // Redis에 인증번호 저장

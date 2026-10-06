@@ -53,10 +53,6 @@ public class SmsServiceImpl implements SmsService {
 
             MultipleDetailMessageSentResponse response = solapiMessageService.send(message, null);
 
-            System.out.println("SMS 발송 성공!");
-            System.out.println("Group ID: " + response.getGroupInfo().getGroupId());
-            System.out.println("Message Count: " + response.getGroupInfo().getCount());
-
             return new SmsResponse(true,  msgUtil.getMsg("SMS", "001"));
 
         } catch (Exception e) {

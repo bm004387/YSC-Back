@@ -7,16 +7,13 @@ import lombok.Setter;
 @Getter
 public class UserVO {
 
-    private String userId;
-    private String passwd;
-    private String userNm;
-    private String role;
-
-    private String firstRegEmpNo;
-    private String firstRegDtm;
-
-    private String lastModEmpNo;
-    private String lastModDtm;
-
+    private String userId;          /* 사용자아이디 */
+    private String passwd;          /* 비밀번호 */
+    private String userNm;          /* 사용자명 */
+    private String role;            /* 권한 */
+    private String hpNo;            /* 핸드폰번호 */
+    private String addr;            /* 주소 */
+    private String dtlAddr;         /* 상세주소 */
+    private String createdAt;       /* 최초가입일시 */
 
 }

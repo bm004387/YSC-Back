@@ -23,7 +23,9 @@
          WHERE USER_ID = #{userId}
     </select>
 
+    <!-- 휴대폰번호 중복확인 -->
     <select id="existsHpNo" parameterType="string" resultType="boolean">
+        /* com.buc.ysc.user.mapper.UserMapper.existsHpNo 휴대폰번호 중복확인 */
         SELECT CASE WHEN COUNT(*) > 0 THEN TRUE
                     ELSE FALSE
                      END

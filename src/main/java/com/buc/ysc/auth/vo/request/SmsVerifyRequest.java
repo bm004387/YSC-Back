@@ -10,7 +10,7 @@ public record SmsVerifyRequest(
                 regexp = "^01[0-9]{8,9}$",
                 message = "올바른 휴대폰 번호를 입력해주세요."
         )
-        String phone,
+        String hpNo,
 
         @NotBlank(message = "인증번호를 입력해주세요.")
         @Pattern(

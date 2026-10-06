@@ -37,9 +37,9 @@ public class SmsServiceImpl implements SmsService {
     @Override
     public SmsResponse send(SmsSendRequest request) {
 
-        String phone = normalizePhone(request.phone());
+        String hpNo = normalizePhone(request.hpNo());
         String code = generateCode();
-        String key = SMS_KEY_PREFIX + phone;
+        String key = SMS_KEY_PREFIX + hpNo;
 
         try {
             // Redis에 인증번호 저장
@@ -48,7 +48,7 @@ public class SmsServiceImpl implements SmsService {
             // SMS 발송
             Message message = new Message();
             message.setFrom(sender);
-            message.setTo(phone);
+            message.setTo(hpNo);
             message.setText("[YSC] 인증번호는 " + code + "입니다.");
 
             MultipleDetailMessageSentResponse response = solapiMessageService.send(message, null);
@@ -66,9 +66,9 @@ public class SmsServiceImpl implements SmsService {
     @Override
     public SmsResponse verify(SmsVerifyRequest request) {
 
-        String phone = normalizePhone(request.phone());
+        String hpNo = normalizePhone(request.hpNo());
 
-        String key = SMS_KEY_PREFIX + phone;
+        String key = SMS_KEY_PREFIX + hpNo;
 
         String savedCode = redisTemplate.opsForValue().get(key);
 
@@ -90,7 +90,7 @@ public class SmsServiceImpl implements SmsService {
         return String.format("%06d", ThreadLocalRandom.current().nextInt(0, 1_000_000));
     }
 
-    private String normalizePhone(String phone) {
-        return phone.replaceAll("[^0-9]", "");
+    private String normalizePhone(String hpNo) {
+        return hpNo.replaceAll("[^0-9]", "");
     }
 }

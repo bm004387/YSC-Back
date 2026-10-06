@@ -52,7 +52,6 @@ public class AuthServiceImpl implements AuthService {
         user.setPasswd(passwordEncoder.encode(request.passwd()));
         user.setUserNm(request.userNm());
         user.setRole("USER");
-        user.setFirstRegEmpNo("TEST0001");
         userMapper.insertUser(user);
 
 

@@ -4,12 +4,12 @@ import com.buc.ysc.user.vo.request.UserVO;
 
 public interface UserMapper {
 
-    UserVO selectByUserId(String userId);
+    UserVO selectByUsrId(String usrId);
 
-    int existsByUserId(String userId);
+    int existsByUsrId(String usrId);
 
     boolean existsHpNo(String hpNo);
 
 
-    void insertUser(UserVO userId);
+    void insertUser(UserVO usrId);
 }

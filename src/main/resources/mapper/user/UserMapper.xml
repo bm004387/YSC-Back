@@ -2,25 +2,25 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.buc.ysc.user.mapper.UserMapper">
     <!-- 사용자 조회 -->
-    <select id="selectByUserId" parameterType="string" resultType="com.buc.ysc.user.vo.request.UserVO">
-        SELECT /* com.buc.ysc.user.mapper.UserMapper.selectByUserId 사용자정보 조회 */
-               USER_ID
-             , PASSWD
-             , USER_NM
-             , ROLE
-             , ADDR
-             , DTL_ADDR
-             , CREATED_AT
-          FROM USERS
-         WHERE USER_ID = #{userId}
+    <select id="selectByUsrId" parameterType="string" resultType="com.buc.ysc.user.vo.request.UserVO">
+        SELECT /* com.buc.ysc.user.mapper.UserMapper.selectByUsrId 사용자정보 조회 */
+               USR_ID
+             , PWD
+             , USR_NM
+             , ROL
+             , ADR
+             , DTL_ADR
+             , JOIN_DTM
+          FROM TB_USR
+         WHERE USR_ID = #{usrId}
     </select>
 
     <!-- 아이디 중복 확인 -->
-    <select id="existsByUserId" parameterType="string" resultType="int">
-        /* com.buc.ysc.user.mapper.UserMapper.existsByUserId 아이디 중복체크 */
+    <select id="existsByUsrId" parameterType="string" resultType="int">
+        /* com.buc.ysc.user.mapper.UserMapper.existsByUsrId 아이디 중복체크 */
         SELECT COUNT(*)
-          FROM USERS
-         WHERE USER_ID = #{userId}
+          FROM TB_USR
+         WHERE USR_ID = #{usrId}
     </select>
 
     <!-- 휴대폰번호 중복확인 -->
@@ -29,7 +29,7 @@
         SELECT CASE WHEN COUNT(*) > 0 THEN TRUE
                     ELSE FALSE
                      END
-          FROM USERS
+          FROM TB_USR
          WHERE HP_NO = #{hpNo}
 
     </select>
@@ -37,33 +37,33 @@
     <!-- 회원가입 -->
     <insert id="insertUser" parameterType="com.buc.ysc.user.vo.request.UserVO">
         /* com.buc.ysc.user.mapper.UserMapper.insertUser 사용자정보 저장 */
-        INSERT INTO USERS
+        INSERT INTO TB_USR
                    (
-                     USER_ID            /* 사용자아이디 */
-                   , PASSWD             /* 비밀번호 */
-                   , USER_NM            /* 사용자명 */
-                   , HP_NO              /* 전화번호 */
-                   , ADDR               /* 주소 */
-                   , DTL_ADDR           /* 상세주소 */
-                   , CREATED_AT         /* 가입일시 */
-                   , ROLE               /* 권한 */
-                   , FRST_REG_USER_ID   /* 최초등록사용자아이디 */
-                   , FRST_REG_DTM       /* 최초등록일시 */
-                   , LAST_MOD_USER_ID   /* 최초등록사용자아이디 */
-                   , LAST_MOD_DTM       /* 최종수정일시 */
+                     USR_ID            /* 사용자아이디 */
+                   , PWD               /* 비밀번호 */
+                   , USR_NM            /* 사용자명 */
+                   , HP_NO             /* 전화번호 */
+                   , ADR               /* 주소 */
+                   , DTL_ADR           /* 상세주소 */
+                   , JOIN_DTM          /* 가입일시 */
+                   , ROL               /* 권한 */
+                   , FRST_REG_USR_ID   /* 최초등록사용자아이디 */
+                   , FRST_REG_DTM      /* 최초등록일시 */
+                   , LAST_MOD_USR_ID   /* 최초등록사용자아이디 */
+                   , LAST_MOD_DTM      /* 최종수정일시 */
                    )
         VALUES     (
-                     #{userId}
-                   , #{passwd}
-                   , #{userNm}
+                     #{usrId}
+                   , #{pwd}
+                   , #{usrNm}
                    , #{hpNo}
-                   , #{addr}
-                   , #{dtlAddr}
+                   , #{adr}
+                   , #{dtlAdr}
                    , CURRENT_TIMESTAMP
                    , 'USER'
-                   , #{userId}
+                   , #{usrId}
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
-                   , #{userId}
+                   , #{usrId}
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
                    )
     </insert>

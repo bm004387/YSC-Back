@@ -2,7 +2,7 @@ package com.buc.ysc.auth.controller;
 
 import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.auth.service.AuthService;
-import com.buc.ysc.auth.vo.record.UserIdCheckResponse;
+import com.buc.ysc.auth.vo.record.UsrIdCheckResponse;
 import com.buc.ysc.auth.vo.response.LoginResponse;
 import com.buc.ysc.auth.vo.response.SignupResponse;
 import com.buc.ysc.auth.vo.record.LoginRequest;
@@ -38,8 +38,8 @@ public class AuthController {
     }
 
     @GetMapping("/check-user-id")
-    public ResponseEntity<UserIdCheckResponse> checkUserId(@RequestParam String userId) {
-        return ResponseEntity.ok(authService.checkUserId(userId.trim()));
+    public ResponseEntity<UsrIdCheckResponse> checkUsrId(@RequestParam String usrId) {
+        return ResponseEntity.ok(authService.checkUsrId(usrId.trim()));
     }
 
     /**
@@ -62,7 +62,7 @@ public class AuthController {
             sessionManager.deleteSession(token);
         }
 
-        return ResponseEntity.ok(java.util.Map.of("message",msgUtil.getMsg("AUTH", "007"))
+        return ResponseEntity.ok(java.util.Map.of("message",msgUtil.getMsg("AUTH", "002"))
         );
     }
 }

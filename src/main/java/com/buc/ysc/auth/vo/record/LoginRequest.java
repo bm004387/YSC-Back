@@ -5,10 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 public record LoginRequest(
 
         @NotBlank
-        String userId,
+        String usrId,
 
         @NotBlank
-        String passwd
+        String pwd
 
 ) {
 }

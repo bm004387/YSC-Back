@@ -1,13 +1,13 @@
 package com.buc.ysc.security;
 
 /**
- * @param userId
- * @param userNm
- * @param role
+ * @param usrId
+ * @param usrNm
+ * @param rol
  */
 public record UserSession(
-        String userId,
-        String userNm,
-        String role
+        String usrId,
+        String usrNm,
+        String rol
 ) {
 }

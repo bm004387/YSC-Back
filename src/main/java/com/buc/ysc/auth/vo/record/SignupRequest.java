@@ -8,15 +8,15 @@ public record SignupRequest(
 
         @NotBlank
         @Size(max = 50)
-        String userId,
+        String usrId,
 
         @NotBlank
         @Size(min = 8, max = 72)
-        String passwd,
+        String pwd,
 
         @NotBlank
         @Size(max = 100)
-        String userNm,
+        String usrNm,
 
         @NotBlank
         @Pattern(
@@ -26,10 +26,10 @@ public record SignupRequest(
         String hpNo,
 
         @Size(max = 255)
-        String addr,
+        String adr,
 
         @Size(max = 255)
-        String dtlAddr
+        String dtlAdr
 
 ) {
 }

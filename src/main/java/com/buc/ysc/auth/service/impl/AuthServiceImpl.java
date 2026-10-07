@@ -5,7 +5,7 @@ import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.security.UserSession;
 import com.buc.ysc.user.mapper.UserMapper;
 import com.buc.ysc.auth.service.AuthService;
-import com.buc.ysc.auth.vo.record.UserIdCheckResponse;
+import com.buc.ysc.auth.vo.record.UsrIdCheckResponse;
 import com.buc.ysc.auth.vo.response.LoginResponse;
 import com.buc.ysc.auth.vo.response.SignupResponse;
 import com.buc.ysc.auth.vo.response.UserInfoResponse;
@@ -43,33 +43,33 @@ public class AuthServiceImpl implements AuthService {
     public SignupResponse signup(SignupRequest request) {
 
         // 아이디 중복 확인
-        if (userMapper.existsByUserId(request.userId()) > 0) {
+        if (userMapper.existsByUsrId(request.usrId()) > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, msgUtil.getMsg("AUTH","002"));
         }
 
         UserVO user = new UserVO();
-        user.setUserId(request.userId());
+        user.setUsrId(request.usrId());
         // 입력받은 비밀번호를 Bcrypt로 암호화
-        user.setPasswd(passwordEncoder.encode(request.passwd()));
-        user.setUserNm(request.userNm());
-        user.setRole("USER");
+        user.setPwd(passwordEncoder.encode(request.pwd()));
+        user.setUsrNm(request.usrNm());
+        user.setRol("USER");
         user.setHpNo(request.hpNo());
-        user.setAddr(request.addr());
-        user.setDtlAddr(request.dtlAddr());
+        user.setAdr(request.adr());
+        user.setDtlAdr(request.dtlAdr());
         userMapper.insertUser(user);
 
 
-        return new SignupResponse(msgUtil.getMsg("AUTH", "005"), request.userId());
+        return new SignupResponse(msgUtil.getMsg("AUTH", "005"), request.usrId());
     }
 
     @Override
-    public UserIdCheckResponse checkUserId(String userId) {
-        int count = userMapper.existsByUserId(userId);
+    public UsrIdCheckResponse checkUsrId(String usrId) {
+        int count = userMapper.existsByUsrId(usrId);
 
         if (count > 0) {
-            return new UserIdCheckResponse(false, msgUtil.getMsg("AUTH", "002"));
+            return new UsrIdCheckResponse(false, msgUtil.getMsg("AUTH", "002"));
         }
-        return new UserIdCheckResponse(true, msgUtil.getMsg("AUTH", "003"));
+        return new UsrIdCheckResponse(true, msgUtil.getMsg("AUTH", "003"));
     }
 
     /**
@@ -79,10 +79,10 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest request) {
 
         System.out.println("===== LOGIN START =====");
-        System.out.println("userId = " + request.userId());
+        System.out.println("usrId = " + request.usrId());
 
         // 1. 사용자 조회
-        UserVO user = userMapper.selectByUserId(request.userId());
+        UserVO user = userMapper.selectByUsrId(request.usrId());
 
         // 2. 사용자 존재 여부 확인
         if (user == null) {
@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 3. 비밀번호 확인
-        boolean passwordMatches = passwordEncoder.matches(request.passwd(),user.getPasswd());
+        boolean passwordMatches = passwordEncoder.matches(request.pwd(),user.getPwd());
 
         if (!passwordMatches) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "004"));
@@ -99,18 +99,18 @@ public class AuthServiceImpl implements AuthService {
 
         // 4. Redis 세션 생성
         UserSession session = new UserSession(
-                                                user.getUserId(),
-                                                user.getUserNm(),
-                                                user.getRole()
+                                                user.getUsrId(),
+                                                user.getUsrNm(),
+                                                user.getRol()
                                         );
 
         String accessToken = sessionManager.createSession(session);
 
         // 5. 사용자 정보 생성
         UserInfoResponse userInfo = new UserInfoResponse(
-                                                        user.getUserId(),
-                                                        user.getUserNm(),
-                                                        user.getRole()
+                                                        user.getUsrId(),
+                                                        user.getUsrNm(),
+                                                        user.getRol()
                                                         );
 
         // 6. 로그인 응답

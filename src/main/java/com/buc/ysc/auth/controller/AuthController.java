@@ -5,6 +5,7 @@ import com.buc.ysc.auth.service.AuthService;
 import com.buc.ysc.auth.vo.record.UsrIdCheckResponse;
 import com.buc.ysc.auth.vo.response.LoginResponse;
 import com.buc.ysc.auth.vo.response.SignupResponse;
+import com.buc.ysc.auth.vo.response.UserInfoResponse;
 import com.buc.ysc.auth.vo.record.LoginRequest;
 import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.util.MsgUtil;
@@ -48,6 +49,27 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** 저장된 access token으로 로그인 세션을 확인합니다. */
+    @GetMapping("/session")
+    public ResponseEntity<UserInfoResponse> validateSession(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        String token = authorization.substring(7);
+        var session = sessionManager.getSession(token);
+        if (session == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(new UserInfoResponse(
+                session.usrId(),
+                session.usrNm(),
+                session.rol()
+        ));
     }
 
     /**

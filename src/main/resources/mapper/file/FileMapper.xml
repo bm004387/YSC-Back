@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.buc.ysc.file.mapper.FileMapper">
+    <select id="nextFileSeq" resultType="long">
+        SELECT nextval('FIL_BAS_SEQ')
+    </select>
+
+    <insert id="insertFileBase">
+        INSERT INTO FIL_BAS (FIL_SEQ, FIL_TYP, FIL_CD, FIL_PTH, FRST_REG_USER_ID)
+        VALUES (#{filSeq}, #{filTyp}, #{filCd}, #{filPth}, #{usrId})
+    </insert>
+
+    <insert id="insertFileDetail">
+        INSERT INTO FIL_DTL
+            (FIL_SEQ, FIL_DTL_SEQ, ORG_FIL_NM, SAV_FIL_NM, FIL_EXT, FIL_SZ, CONT_TYP, FRST_REG_USER_ID)
+        VALUES
+            (#{filSeq}, #{filDtlSeq}, #{orgFilNm}, #{savFilNm}, #{filExt}, #{filSz}, #{contTyp}, #{usrId})
+    </insert>
+
+    <select id="selectFile" resultType="com.buc.ysc.file.vo.StoredFile">
+        SELECT B.FIL_PTH AS filPth,
+               D.SAV_FIL_NM AS savFilNm,
+               D.ORG_FIL_NM AS orgFilNm,
+               D.CONT_TYP AS contTyp
+          FROM FIL_BAS B
+          JOIN FIL_DTL D ON D.FIL_SEQ = B.FIL_SEQ
+         WHERE B.FIL_SEQ = #{filSeq}
+         ORDER BY D.FIL_DTL_SEQ
+         LIMIT 1
+    </select>
+
+    <delete id="deleteFileDetails">
+        DELETE FROM FIL_DTL WHERE FIL_SEQ = #{filSeq}
+    </delete>
+
+    <delete id="deleteFileBase">
+        DELETE FROM FIL_BAS WHERE FIL_SEQ = #{filSeq}
+    </delete>
+</mapper>

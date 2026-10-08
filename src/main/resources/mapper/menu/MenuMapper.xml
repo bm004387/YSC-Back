@@ -2,11 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.buc.ysc.common.menu.mapper.MenuMapper">
     <select id="getBottomMenuList" resultType="com.buc.ysc.common.menu.vo.MenuVO">
-        SELECT m.menu_id
-             , m.menu_nm
-             , m.ico_nm
-             , p.pgm_cd AS program_code
-             , p.pgm_url AS program_url
+        SELECT m.menu_id AS "menuId"
+             , m.menu_nm AS "menuName"
+             , m.ico_nm AS "iconName"
+             , p.pgm_cd AS "programCode"
+             , p.pgm_url AS "programUrl"
           FROM ysc.menu_mng m
           JOIN ysc.pgm_mng p
             ON p.pgm_cd = m.pgm_cd

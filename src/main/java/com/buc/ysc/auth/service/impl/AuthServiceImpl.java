@@ -101,7 +101,10 @@ public class AuthServiceImpl implements AuthService {
         UserSession session = new UserSession(
                                                 user.getUsrId(),
                                                 user.getUsrNm(),
-                                                user.getRol()
+                                                user.getRol(),
+                                                user.getHpNo(),
+                                                user.getAdr(),
+                                                user.getDtlAdr()
                                         );
 
         String accessToken = sessionManager.createSession(session);
@@ -110,7 +113,10 @@ public class AuthServiceImpl implements AuthService {
         UserInfoResponse userInfo = new UserInfoResponse(
                                                         user.getUsrId(),
                                                         user.getUsrNm(),
-                                                        user.getRol()
+                                                        user.getRol(),
+                                                        user.getHpNo(),
+                                                        user.getAdr(),
+                                                        user.getDtlAdr()
                                                         );
 
         // 6. 로그인 응답

@@ -7,9 +7,11 @@
                USR_ID
              , PWD
              , USR_NM
+             , HP_NO
              , ROL
              , ADR
              , DTL_ADR
+             , PRFL_IMG_FIL_SEQ
              , JOIN_DTM
           FROM TB_USR
          WHERE USR_ID = #{usrId}
@@ -47,9 +49,9 @@
                    , DTL_ADR           /* 상세주소 */
                    , JOIN_DTM          /* 가입일시 */
                    , ROL               /* 권한 */
-                   , FRST_REG_USR_ID   /* 최초등록사용자아이디 */
+                   , FRST_REG_USER_ID  /* 최초등록사용자아이디 */
                    , FRST_REG_DTM      /* 최초등록일시 */
-                   , LAST_MOD_USR_ID   /* 최초등록사용자아이디 */
+                   , LAST_MOD_USER_ID  /* 최종수정사용자아이디 */
                    , LAST_MOD_DTM      /* 최종수정일시 */
                    )
         VALUES     (
@@ -67,4 +69,22 @@
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
                    )
     </insert>
+
+    <update id="updatePassword">
+        UPDATE TB_USR
+           SET PWD = #{pwd}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+         WHERE USR_ID = #{usrId}
+    </update>
+
+    <update id="updateAddress">
+        UPDATE TB_USR
+           SET ADR = #{adr}, DTL_ADR = #{dtlAdr}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+         WHERE USR_ID = #{usrId}
+    </update>
+
+    <update id="updateProfileImageFileSeq">
+        UPDATE TB_USR
+           SET PRFL_IMG_FIL_SEQ = #{filSeq}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+         WHERE USR_ID = #{usrId}
+    </update>
 </mapper>

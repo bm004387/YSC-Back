@@ -15,5 +15,6 @@ public class UserVO {
     private String adr;            /* 주소 */
     private String dtlAdr;         /* 상세주소 */
     private String joinDtm;       /* 최초가입일시 */
+    private Long prflImgFilSeq;  /* 프로필 이미지 파일 일련번호 */
 
 }

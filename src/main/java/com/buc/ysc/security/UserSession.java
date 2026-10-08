@@ -8,6 +8,9 @@ package com.buc.ysc.security;
 public record UserSession(
         String usrId,
         String usrNm,
-        String rol
+        String rol,
+        String hpNo,
+        String adr,
+        String dtlAdr
 ) {
 }

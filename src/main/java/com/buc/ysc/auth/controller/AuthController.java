@@ -68,7 +68,10 @@ public class AuthController {
         return ResponseEntity.ok(new UserInfoResponse(
                 session.usrId(),
                 session.usrNm(),
-                session.rol()
+                session.rol(),
+                session.hpNo(),
+                session.adr(),
+                session.dtlAdr()
         ));
     }
 

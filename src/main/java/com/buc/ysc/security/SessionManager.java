@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -54,7 +55,10 @@ public class SessionManager {
         Map<String, String> values = Map.of(
                 "usrId", session.usrId(),
                 "usrNm", session.usrNm(),
-                "rol", session.rol()
+                "rol", session.rol(),
+                "hpNo", Objects.toString(session.hpNo(), ""),
+                "adr", Objects.toString(session.adr(), ""),
+                "dtlAdr", Objects.toString(session.dtlAdr(), "")
         );
 
         // Redis Hash에 세션 저장
@@ -94,7 +98,10 @@ public class SessionManager {
             UserSession session = new UserSession(
                     values.get("usrId").toString(),
                     values.get("usrNm").toString(),
-                    values.get("rol").toString()
+                    values.get("rol").toString(),
+                    Objects.toString(values.get("hpNo"), ""),
+                    Objects.toString(values.get("adr"), ""),
+                    Objects.toString(values.get("dtlAdr"), "")
             );
 
             // 정상적인 요청이 들어오면
@@ -127,6 +134,15 @@ public class SessionManager {
         String redisKey = getRedisKey(token);
 
         redisTemplate.delete(redisKey);
+    }
+
+    /** 세션에 저장된 주소 정보를 수정합니다. */
+    public void updateAddress(String token, String adr, String dtlAdr) {
+        if (token == null || token.isBlank()) return;
+        String redisKey = getRedisKey(token);
+        redisTemplate.opsForHash().put(redisKey, "adr", Objects.toString(adr, ""));
+        redisTemplate.opsForHash().put(redisKey, "dtlAdr", Objects.toString(dtlAdr, ""));
+        redisTemplate.expire(redisKey, SESSION_TTL);
     }
 
     /**

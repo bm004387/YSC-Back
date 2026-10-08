@@ -2,6 +2,7 @@ package com.buc.ysc.file.service;
 
 import com.buc.ysc.file.mapper.FileMapper;
 import com.buc.ysc.file.vo.StoredFile;
+import com.buc.ysc.util.MsgUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -21,21 +22,23 @@ public class FileStorageService {
 
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
     private final FileMapper fileMapper;
+    private final MsgUtil msgUtil;
     private final Path storageRoot;
 
-    public FileStorageService(FileMapper fileMapper,
+    public FileStorageService(FileMapper fileMapper, MsgUtil msgUtil,
                               @Value("${file.storage.root:./uploads}") String storageRoot) {
         this.fileMapper = fileMapper;
+        this.msgUtil = msgUtil;
         this.storageRoot = Path.of(storageRoot).toAbsolutePath().normalize();
     }
 
     @Transactional
     public Long store(MultipartFile file, String fileType, String fileCode, String userId) {
         if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "저장할 파일을 선택해 주세요.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("FILE", "001"));
         }
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, "파일은 10MB 이하로 선택해 주세요.");
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE, msgUtil.getMsg("FILE", "002"));
         }
 
         Long fileSeq = fileMapper.nextFileSeq();
@@ -56,13 +59,13 @@ public class FileStorageService {
         } catch (IOException | RuntimeException exception) {
             try { Files.deleteIfExists(savedPath); } catch (IOException ignored) { }
             if (exception instanceof ResponseStatusException statusException) throw statusException;
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "파일 저장에 실패했습니다.", exception);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, msgUtil.getMsg("FILE", "003"), exception);
         }
     }
 
     public StoredFile metadata(Long fileSeq) {
         StoredFile file = fileMapper.selectFile(fileSeq);
-        if (file == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다.");
+        if (file == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("FILE", "004"));
         return file;
     }
 
@@ -70,7 +73,7 @@ public class FileStorageService {
         Path directory = Path.of(file.getFilPth()).toAbsolutePath().normalize();
         Path path = directory.resolve(file.getSavFilNm()).normalize();
         ensureInsideRoot(path);
-        if (!Files.isRegularFile(path)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다.");
+        if (!Files.isRegularFile(path)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("FILE", "004"));
         return path;
     }
 
@@ -85,7 +88,7 @@ public class FileStorageService {
             Path directory = path.getParent();
             if (directory != null) Files.deleteIfExists(directory);
         } catch (IOException exception) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "기존 파일 삭제에 실패했습니다.", exception);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, msgUtil.getMsg("FILE", "006"), exception);
         }
         fileMapper.deleteFileDetails(fileSeq);
         fileMapper.deleteFileBase(fileSeq);
@@ -93,7 +96,7 @@ public class FileStorageService {
 
     private void ensureInsideRoot(Path path) {
         if (!path.normalize().startsWith(storageRoot)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 파일 경로입니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("FILE", "005"));
         }
     }
 

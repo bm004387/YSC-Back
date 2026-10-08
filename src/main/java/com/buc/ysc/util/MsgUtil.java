@@ -59,21 +59,9 @@ public class MsgUtil {
      * @return 전체 메시지
      */
     public Map<String, String> getAllMsg() {
-
-        // 1. Redis에서 전체 메시지 조회
-        Map<Object, Object> redisMap = msgRedisTemplate.opsForHash().entries(MSG_KEY);
-
-        if (redisMap != null && !redisMap.isEmpty()) {
-            return convertToStringMap(redisMap);
-        }
-
-        // 2. Redis에 없으면 DB에서 전체 메시지 조회 후 Redis 적재
+        // DB를 다시 적재해 운영 중 추가/수정된 메시지가 화면에 반영되도록 합니다.
         loadMsgToRedis();
-
-        // 3. Redis에서 다시 전체 메시지 조회
-        redisMap = msgRedisTemplate.opsForHash().entries(MSG_KEY);
-
-        return convertToStringMap(redisMap);
+        return convertToStringMap(msgRedisTemplate.opsForHash().entries(MSG_KEY));
     }
 
     /**

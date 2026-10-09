@@ -92,8 +92,16 @@ public class UserController {
         if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("MYINFO", "011"));
         }
+        UserVO user = userMapper.selectByUsrId(session.usrId());
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("MYINFO", "010"));
+        }
         Long newFileSeq = fileStorageService.store(file, "USER", "PROFILE", session.usrId());
-        userMapper.updateProfileImageFileSeq(session.usrId(), newFileSeq);
+        int updatedRows = userMapper.updateProfileImageFileSeq(session.usrId(), newFileSeq);
+        if (updatedRows != 1) {
+            fileStorageService.delete(newFileSeq);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("MYINFO", "010"));
+        }
         return ResponseEntity.ok(java.util.Map.of(
                 "message", msgUtil.getMsg("MYINFO", "005"),
                 "profileImageUrl", "/api/user/me/profile-image"));
@@ -112,7 +120,7 @@ public class UserController {
         catch (RuntimeException invalidType) { mediaType = MediaType.APPLICATION_OCTET_STREAM; }
         return ResponseEntity.ok()
                 .contentType(mediaType)
-                .header("Cache-Control", "private, max-age=3600")
+                .header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
                 .body((Resource) new FileSystemResource(fileStorageService.pathOf(file)));
     }
 

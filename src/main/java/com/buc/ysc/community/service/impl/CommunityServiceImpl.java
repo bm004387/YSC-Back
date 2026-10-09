@@ -24,7 +24,7 @@ public class CommunityServiceImpl implements CommunityService {
 
     @Override
     public List<CommunityPost> feed(String userId, String feedType, int limit) {
-        String type = List.of("recommended", "following", "popular").contains(feedType) ? feedType : "recommended";
+        String type = List.of("recommended", "following", "popular", "mine").contains(feedType) ? feedType : "recommended";
         List<CommunityPost> posts = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
         return posts.stream().map(p -> new CommunityPost(p.postSeq(), p.authorId(), p.authorName(), p.content(),
                 p.createdAt(), p.likeCount(), p.commentCount(), p.likedByMe(), p.savedByMe(),

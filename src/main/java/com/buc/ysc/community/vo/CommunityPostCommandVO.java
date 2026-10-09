@@ -1,0 +1,20 @@
+package com.buc.ysc.community.vo;
+
+import com.buc.ysc.common.vo.CommonVO;
+import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+/** 세션 사용자와 함께 커뮤니티 게시물 변경 정보를 전달하는 VO입니다. */
+@Getter
+@Setter
+public class CommunityPostCommandVO extends CommonVO {
+
+    private Long postSeq;
+    private String usrId;
+    private String content;
+    private String visibility;
+    private Boolean enabled;
+    private List<MultipartFile> files;
+}

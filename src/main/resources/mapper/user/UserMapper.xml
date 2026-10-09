@@ -13,6 +13,10 @@
              , DTL_ADR
              , PRFL_IMG_FIL_SEQ
              , JOIN_DTM
+             , FRST_REG_USER_ID
+             , FRST_REG_DTM
+             , LAST_MOD_USER_ID
+             , LAST_MOD_DTM
           FROM TB_USR
          WHERE USR_ID = #{usrId}
     </select>
@@ -63,28 +67,28 @@
                    , #{dtlAdr}
                    , CURRENT_TIMESTAMP
                    , 'USER'
-                   , #{usrId}
+                   , #{frstRegUserId}
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
-                   , #{usrId}
+                   , #{lastModUserId}
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
                    )
     </insert>
 
     <update id="updatePassword">
         UPDATE TB_USR
-           SET PWD = #{pwd}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+           SET PWD = #{pwd}, LAST_MOD_USER_ID = #{lastModUserId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
          WHERE USR_ID = #{usrId}
     </update>
 
     <update id="updateAddress">
         UPDATE TB_USR
-           SET ADR = #{adr}, DTL_ADR = #{dtlAdr}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+           SET ADR = #{adr}, DTL_ADR = #{dtlAdr}, LAST_MOD_USER_ID = #{lastModUserId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
          WHERE USR_ID = #{usrId}
     </update>
 
     <update id="updateProfileImageFileSeq">
         UPDATE TB_USR
-           SET PRFL_IMG_FIL_SEQ = #{filSeq}, LAST_MOD_USER_ID = #{usrId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+           SET PRFL_IMG_FIL_SEQ = #{prflImgFilSeq}, LAST_MOD_USER_ID = #{lastModUserId}, LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
          WHERE USR_ID = #{usrId}
     </update>
 </mapper>

@@ -2,6 +2,7 @@ package com.buc.ysc.community.controller;
 
 import com.buc.ysc.community.mapper.CommunityMapper;
 import com.buc.ysc.community.service.CommunityService;
+import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
@@ -63,7 +64,12 @@ public class CommunityController {
             @RequestPart("content") String content,
             @RequestPart(value = "visibility", required = false) String visibility,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
-        return Map.of("postSeq", service.create(session(request).usrId(), content, visibility, files));
+        UserSession session = session(request);
+        CommunityPostCommandVO command = commandFor(session);
+        command.setContent(content);
+        command.setVisibility(visibility);
+        command.setFiles(files);
+        return Map.of("postSeq", service.create(command));
     }
 
     /** 사용자가 피드에서 확인한 게시물을 읽음 처리합니다. */
@@ -71,7 +77,9 @@ public class CommunityController {
     public Map<String, Boolean> seen(
             HttpServletRequest request,
             @PathVariable Long postSeq) {
-        service.markSeen(postSeq, session(request).usrId());
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        service.markSeen(command);
         return Map.of("success", true);
     }
 
@@ -81,7 +89,10 @@ public class CommunityController {
             HttpServletRequest request,
             @PathVariable Long postSeq,
             @RequestBody Toggle body) {
-        service.like(postSeq, session(request).usrId(), body.enabled());
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        command.setEnabled(body.enabled());
+        service.like(command);
         return Map.of("success", true);
     }
 
@@ -91,7 +102,10 @@ public class CommunityController {
             HttpServletRequest request,
             @PathVariable Long postSeq,
             @RequestBody Toggle body) {
-        service.save(postSeq, session(request).usrId(), body.enabled());
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        command.setEnabled(body.enabled());
+        service.save(command);
         return Map.of("success", true);
     }
 
@@ -122,6 +136,14 @@ public class CommunityController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
         }
         return user;
+    }
+
+    /** 세션 사용자 ID를 업무 VO와 공통 시스템 컬럼에 설정합니다. */
+    private CommunityPostCommandVO commandFor(UserSession session) {
+        CommunityPostCommandVO command = new CommunityPostCommandVO();
+        command.setUsrId(session.usrId());
+        command.setSystemUserId(session.usrId());
+        return command;
     }
 
     /** 좋아요·저장 변경 요청 값입니다. */

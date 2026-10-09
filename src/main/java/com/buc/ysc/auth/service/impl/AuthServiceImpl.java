@@ -48,6 +48,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         UserVO user = new UserVO();
+        user.setSystemUserId(request.usrId());
         user.setUsrId(request.usrId());
         // 입력받은 비밀번호를 Bcrypt로 암호화
         user.setPwd(passwordEncoder.encode(request.pwd()));

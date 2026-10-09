@@ -60,14 +60,26 @@ public class FileStorageServiceImpl implements FileStorageService {
         Path savedPath = directory.resolve(savedName).normalize();
         ensureInsideRoot(savedPath);
 
+        StoredFile storedFile = new StoredFile();
+        storedFile.setFilSeq(fileSeq);
+        storedFile.setFilDtlSeq(1L);
+        storedFile.setFilTyp(fileType);
+        storedFile.setFilCd(fileCode);
+        storedFile.setFilPth(directory.toString());
+        storedFile.setOrgFilNm(originalName);
+        storedFile.setSavFilNm(savedName);
+        storedFile.setFilExt(extension);
+        storedFile.setFilSz(file.getSize());
+        storedFile.setContTyp(safeContentType(file.getContentType()));
+        storedFile.setSystemUserId(userId);
+
         try {
             Files.createDirectories(directory);
             try (InputStream input = file.getInputStream()) {
                 Files.copy(input, savedPath, StandardCopyOption.REPLACE_EXISTING);
             }
-            int baseRows = fileMapper.insertFileBase(fileSeq, fileType, fileCode, directory.toString(), userId);
-            int detailRows = fileMapper.insertFileDetail(fileSeq, 1L, originalName, savedName, extension,
-                    file.getSize(), safeContentType(file.getContentType()), userId);
+            int baseRows = fileMapper.insertFileBase(storedFile);
+            int detailRows = fileMapper.insertFileDetail(storedFile);
             if (baseRows != 1 || detailRows != 1) {
                 throw new IllegalStateException("파일 메타데이터 저장 결과가 올바르지 않습니다.");
             }

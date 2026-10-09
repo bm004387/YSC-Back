@@ -7,14 +7,14 @@
 
     <insert id="insertFileBase">
         INSERT INTO FIL_BAS (FIL_SEQ, FIL_TYP, FIL_CD, FIL_PTH, FRST_REG_USER_ID)
-        VALUES (#{filSeq}, #{filTyp}, #{filCd}, #{filPth}, #{usrId})
+        VALUES (#{filSeq}, #{filTyp}, #{filCd}, #{filPth}, #{frstRegUserId})
     </insert>
 
     <insert id="insertFileDetail">
         INSERT INTO FIL_DTL
             (FIL_SEQ, FIL_DTL_SEQ, ORG_FIL_NM, SAV_FIL_NM, FIL_EXT, FIL_SZ, CONT_TYP, FRST_REG_USER_ID)
         VALUES
-            (#{filSeq}, #{filDtlSeq}, #{orgFilNm}, #{savFilNm}, #{filExt}, #{filSz}, #{contTyp}, #{usrId})
+            (#{filSeq}, #{filDtlSeq}, #{orgFilNm}, #{savFilNm}, #{filExt}, #{filSz}, #{contTyp}, #{frstRegUserId})
     </insert>
 
     <select id="selectFile" resultType="com.buc.ysc.file.vo.StoredFile">

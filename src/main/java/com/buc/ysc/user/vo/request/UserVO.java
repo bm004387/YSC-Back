@@ -1,11 +1,13 @@
 package com.buc.ysc.user.vo.request;
 
+import com.buc.ysc.common.vo.CommonVO;
 import lombok.Getter;
 import lombok.Setter;
 
+/** 사용자 조회·저장 정보와 시스템 감사 컬럼을 담는 VO입니다. */
 @Setter
 @Getter
-public class UserVO {
+public class UserVO extends CommonVO {
 
     private String usrId;          /* 사용자아이디 */
     private String pwd;          /* 비밀번호 */

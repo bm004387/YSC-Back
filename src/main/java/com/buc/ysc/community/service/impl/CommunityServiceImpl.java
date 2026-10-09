@@ -3,6 +3,7 @@ package com.buc.ysc.community.service.impl;
 import com.buc.ysc.community.mapper.CommunityMapper;
 import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPost;
+import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
@@ -34,33 +35,39 @@ public class CommunityServiceImpl implements CommunityService {
         List<CommunityPostRowVO> rows = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
         return rows.stream()
                 .map(row -> new CommunityPost(
-                        row.postSeq(),
-                        row.authorId(),
-                        row.authorName(),
-                        row.content(),
-                        row.createdAt(),
-                        row.likeCount(),
-                        row.commentCount(),
-                        row.likedByMe(),
-                        row.savedByMe(),
-                        mapper.selectMedia(row.postSeq())))
+                        row.getPostSeq(),
+                        row.getAuthorId(),
+                        row.getAuthorName(),
+                        row.getContent(),
+                        row.getCreatedAt(),
+                        row.getLikeCount(),
+                        row.getCommentCount(),
+                        row.isLikedByMe(),
+                        row.isSavedByMe(),
+                        mapper.selectMedia(row.getPostSeq())))
                 .toList();
     }
 
     /** 게시물과 업로드된 미디어를 트랜잭션으로 저장합니다. */
     @Override
     @Transactional
-    public Long create(String userId, String content, String visibility, List<MultipartFile> files) {
+    public Long create(CommunityPostCommandVO command) {
+        String userId = command.getUsrId();
+        String content = command.getContent();
         if (content == null || content.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시물 내용을 입력해 주세요.");
         }
-        String vis = "FOLLOWER".equalsIgnoreCase(visibility) ? "FOLLOWER" : "PUBLIC";
+        String vis = "FOLLOWER".equalsIgnoreCase(command.getVisibility()) ? "FOLLOWER" : "PUBLIC";
         Long seq = mapper.nextPostSeq();
-        mapper.insertPost(seq, userId, null, content.trim(), vis);
+        command.setContent(content.trim());
+        command.setVisibility(vis);
+        mapper.insertPost(seq, command);
         List<Long> stored = new ArrayList<>();
         try {
             int order = 1;
-            for (MultipartFile file : files == null ? List.<MultipartFile>of() : files) {
+            for (MultipartFile file : command.getFiles() == null
+                    ? List.<MultipartFile>of()
+                    : command.getFiles()) {
                 if (file == null || file.isEmpty()) {
                     continue;
                 }
@@ -70,7 +77,7 @@ public class CommunityServiceImpl implements CommunityService {
                         : "IMAGE";
                 Long filSeq = fileStorage.store(file, "COMM", "1", userId);
                 stored.add(filSeq);
-                mapper.insertPostFile(seq, filSeq, order++, type, userId);
+                mapper.insertPostFile(seq, filSeq, order++, type, command);
             }
         } catch (RuntimeException ex) {
             stored.forEach(fileStorage::delete);
@@ -82,29 +89,29 @@ public class CommunityServiceImpl implements CommunityService {
     /** 게시물 열람 기록을 저장합니다. */
     @Override
     @Transactional
-    public void markSeen(Long postSeq, String userId) {
-        mapper.markSeen(postSeq, userId);
+    public void markSeen(CommunityPostCommandVO command) {
+        mapper.markSeen(command);
     }
 
     /** 게시물 좋아요를 등록하거나 취소합니다. */
     @Override
     @Transactional
-    public void like(Long postSeq, String userId, boolean enabled) {
-        if (enabled) {
-            mapper.addLike(postSeq, userId);
+    public void like(CommunityPostCommandVO command) {
+        if (Boolean.TRUE.equals(command.getEnabled())) {
+            mapper.addLike(command);
         } else {
-            mapper.removeLike(postSeq, userId);
+            mapper.removeLike(command);
         }
     }
 
     /** 게시물 저장 표시를 등록하거나 취소합니다. */
     @Override
     @Transactional
-    public void save(Long postSeq, String userId, boolean enabled) {
-        if (enabled) {
-            mapper.addSave(postSeq, userId);
+    public void save(CommunityPostCommandVO command) {
+        if (Boolean.TRUE.equals(command.getEnabled())) {
+            mapper.addSave(command);
         } else {
-            mapper.removeSave(postSeq, userId);
+            mapper.removeSave(command);
         }
     }
 }

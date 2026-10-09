@@ -1,11 +1,13 @@
 package com.buc.ysc.common.msg.vo;
 
+import com.buc.ysc.common.vo.CommonVO;
 import lombok.Getter;
 import lombok.Setter;
 
+/** 메시지 조회 결과와 시스템 감사 컬럼을 보관하는 VO입니다. */
 @Getter
 @Setter
-public class MsgVO {
+public class MsgVO extends CommonVO {
 
     private String menuId;
     private String msgCd;

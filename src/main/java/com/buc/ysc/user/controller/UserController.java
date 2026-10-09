@@ -70,7 +70,11 @@ public class UserController {
         if (!body.newPassword().equals(body.confirmPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("COMMON", "003"));
         }
-        userMapper.updatePassword(session.usrId(), passwordEncoder.encode(body.newPassword()));
+        UserVO update = new UserVO();
+        update.setUsrId(session.usrId());
+        update.setPwd(passwordEncoder.encode(body.newPassword()));
+        update.setSystemUserId(session.usrId());
+        userMapper.updatePassword(update);
         return ResponseEntity.ok(java.util.Map.of(
                 "success", true,
                 "message", msgUtil.getMsg("MYINFO", "003")));
@@ -93,7 +97,12 @@ public class UserController {
         if (body.adr() == null || body.adr().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("COMMON", "007"));
         }
-        userMapper.updateAddress(session.usrId(), body.adr().trim(), body.dtlAdr() == null ? "" : body.dtlAdr().trim());
+        UserVO update = new UserVO();
+        update.setUsrId(session.usrId());
+        update.setAdr(body.adr().trim());
+        update.setDtlAdr(body.dtlAdr() == null ? "" : body.dtlAdr().trim());
+        update.setSystemUserId(session.usrId());
+        userMapper.updateAddress(update);
         sessionManager.updateAddress(token, body.adr().trim(), body.dtlAdr() == null ? "" : body.dtlAdr().trim());
         return ResponseEntity.ok(java.util.Map.of("message", msgUtil.getMsg("MYINFO", "004")));
     }
@@ -113,7 +122,11 @@ public class UserController {
         }
         // FIL_CD 2: 프로필 사진. 실제 저장 경로는 {FILE_STORAGE_ROOT}/2 입니다.
         Long newFileSeq = fileStorageService.store(file, "USER", "2", session.usrId());
-        int updatedRows = userMapper.updateProfileImageFileSeq(session.usrId(), newFileSeq);
+        UserVO update = new UserVO();
+        update.setUsrId(session.usrId());
+        update.setPrflImgFilSeq(newFileSeq);
+        update.setSystemUserId(session.usrId());
+        int updatedRows = userMapper.updateProfileImageFileSeq(update);
         if (updatedRows != 1) {
             fileStorageService.delete(newFileSeq);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("MYINFO", "010"));

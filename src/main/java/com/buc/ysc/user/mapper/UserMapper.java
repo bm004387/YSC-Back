@@ -14,10 +14,10 @@ public interface UserMapper {
 
     void insertUser(UserVO usrId);
 
-    int updatePassword(@Param("usrId") String usrId, @Param("pwd") String pwd);
+    int updatePassword(UserVO user);
 
-    int updateAddress(@Param("usrId") String usrId, @Param("adr") String adr, @Param("dtlAdr") String dtlAdr);
+    int updateAddress(UserVO user);
 
-    int updateProfileImageFileSeq(@Param("usrId") String usrId, @Param("filSeq") Long filSeq);
+    int updateProfileImageFileSeq(UserVO user);
 
 }

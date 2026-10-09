@@ -21,13 +21,13 @@
         )
         VALUES (
             #{postSeq},
-            #{usrId},
-            #{title},
-            #{content},
+            #{command.usrId},
+            NULL,
+            #{command.content},
             'ACTIVE',
-            #{visibility},
+            #{command.visibility},
             CURRENT_TIMESTAMP,
-            #{usrId}
+            #{command.frstRegUserId}
         )
     </insert>
 
@@ -45,7 +45,7 @@
             #{filSeq},
             #{sortOrder},
             #{mediaType},
-            #{usrId}
+            #{command.frstRegUserId}
         )
     </insert>
 
@@ -157,37 +157,63 @@
 
     <!-- 사용자가 게시물을 확인한 기록을 최초 1회 저장합니다. -->
     <insert id="markSeen">
-        INSERT INTO TB_COMM_POST_SEEN (USR_ID, POST_SEQ, SEEN_DTM)
-        VALUES (#{usrId}, #{postSeq}, CURRENT_TIMESTAMP)
+        INSERT INTO TB_COMM_POST_SEEN (
+            USR_ID
+            ,  POST_SEQ
+            ,  SEEN_DTM
+            ,  FRST_REG_USER_ID
+        )
+        VALUES (
+            #{command.usrId}
+            ,  #{command.postSeq}
+            ,  CURRENT_TIMESTAMP
+            ,  #{command.frstRegUserId}
+        )
         ON CONFLICT (USR_ID, POST_SEQ) DO NOTHING
     </insert>
 
     <!-- 게시물 좋아요를 중복 없이 등록합니다. -->
     <insert id="addLike">
-        INSERT INTO TB_COMM_POST_LIKE (POST_SEQ, USR_ID)
-        VALUES (#{postSeq}, #{usrId})
+        INSERT INTO TB_COMM_POST_LIKE (
+            POST_SEQ
+            ,  USR_ID
+            ,  FRST_REG_USER_ID
+        )
+        VALUES (
+            #{command.postSeq}
+            ,  #{command.usrId}
+            ,  #{command.frstRegUserId}
+        )
         ON CONFLICT DO NOTHING
     </insert>
 
     <!-- 사용자의 게시물 좋아요를 취소합니다. -->
     <delete id="removeLike">
         DELETE FROM TB_COMM_POST_LIKE
-        WHERE POST_SEQ = #{postSeq}
-          AND USR_ID = #{usrId}
+        WHERE POST_SEQ = #{command.postSeq}
+          AND USR_ID = #{command.usrId}
     </delete>
 
     <!-- 게시물 저장 표시를 중복 없이 등록합니다. -->
     <insert id="addSave">
-        INSERT INTO TB_COMM_POST_SAVE (POST_SEQ, USR_ID)
-        VALUES (#{postSeq}, #{usrId})
+        INSERT INTO TB_COMM_POST_SAVE (
+            POST_SEQ
+            ,  USR_ID
+            ,  FRST_REG_USER_ID
+        )
+        VALUES (
+            #{command.postSeq}
+            ,  #{command.usrId}
+            ,  #{command.frstRegUserId}
+        )
         ON CONFLICT DO NOTHING
     </insert>
 
     <!-- 사용자의 게시물 저장 표시를 취소합니다. -->
     <delete id="removeSave">
         DELETE FROM TB_COMM_POST_SAVE
-        WHERE POST_SEQ = #{postSeq}
-          AND USR_ID = #{usrId}
+        WHERE POST_SEQ = #{command.postSeq}
+          AND USR_ID = #{command.usrId}
     </delete>
 
     <!-- 파일 요청 사용자가 게시물 공개 범위에 포함되는지 확인합니다. -->

@@ -1,9 +1,13 @@
 package com.buc.ysc.common.menu.vo;
 
+import com.buc.ysc.common.vo.CommonVO;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+/** 메뉴 조회 결과와 시스템 감사 컬럼을 보관하는 VO입니다. */
 @Data
-public class MenuVO {
+@EqualsAndHashCode(callSuper = true)
+public class MenuVO extends CommonVO {
     private String menuId;
     private String menuName;
     private String upperMenuId;

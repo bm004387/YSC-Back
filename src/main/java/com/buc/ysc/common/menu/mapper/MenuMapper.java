@@ -8,4 +8,5 @@ import java.util.List;
 @Mapper
 public interface MenuMapper {
     List<MenuVO> getBottomMenuList();
+    List<MenuVO> getAllMenuList();
 }

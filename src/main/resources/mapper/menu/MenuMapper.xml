@@ -16,4 +16,22 @@
            AND p.use_yn = 'Y'
          ORDER BY m.sort_ord, m.menu_id
     </select>
+
+    <select id="getAllMenuList" resultType="com.buc.ysc.common.menu.vo.MenuVO">
+        SELECT m.menu_id AS "menuId"
+             , m.menu_nm AS "menuName"
+             , m.up_menu_id AS "upperMenuId"
+             , m.menu_lvl AS "menuLevel"
+             , m.sort_ord AS "sortOrder"
+             , m.menu_typ AS "menuType"
+             , m.ico_nm AS "iconName"
+             , p.pgm_cd AS "programCode"
+             , p.pgm_url AS "programUrl"
+          FROM ysc.menu_mng m
+          LEFT JOIN ysc.pgm_mng p
+            ON p.pgm_cd = m.pgm_cd
+           AND p.use_yn = 'Y'
+         WHERE m.use_yn = 'Y'
+         ORDER BY m.sort_ord, m.menu_lvl, m.menu_id
+    </select>
 </mapper>

@@ -20,4 +20,9 @@ public class MenuController {
     public List<MenuVO> getBottomMenuList() {
         return menuMapper.getBottomMenuList();
     }
+
+    @GetMapping(value = "/all", produces = "application/json; charset=UTF-8")
+    public List<MenuVO> getAllMenuList() {
+        return menuMapper.getAllMenuList();
+    }
 }

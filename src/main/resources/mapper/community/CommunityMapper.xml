@@ -228,10 +228,11 @@
             ,  U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
             ,  C.CMT_CN AS cmtCn
             ,  TO_CHAR(C.CMT_DTM, 'YYYY-MM-DD"T"HH24:MI:SS') AS cmtDtm
+            ,  (C.CMT_STAT = 'DELETED') AS deleted
         FROM TB_COMM_CMT C
         JOIN TB_USR U ON U.USR_ID = C.USR_ID
         WHERE C.POST_SEQ = #{postSeq}
-          AND C.CMT_STAT = 'ACTIVE'
+          AND C.CMT_STAT IN ('ACTIVE', 'DELETED')
         ORDER BY C.CMT_DTM
     </select>
 
@@ -323,6 +324,18 @@
         UPDATE TB_COMM_CMT
            SET CMT_CN = #{command.commentContent}
             ,  LAST_MOD_USER_ID = #{command.userId}
+            ,  LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+        WHERE CMT_SEQ = #{command.cmtSeq}
+          AND POST_SEQ = #{command.postSeq}
+          AND USR_ID = #{command.usrId}
+          AND CMT_STAT = 'ACTIVE'
+    </update>
+
+    <!-- 작성자 본인의 활성 댓글을 삭제 상태로 변경하고 수정 이력을 저장합니다. -->
+    <update id="deleteComment">
+        UPDATE TB_COMM_CMT
+           SET CMT_STAT = 'DELETED'
+            ,  LAST_MOD_USER_ID = #{command.usrId}
             ,  LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
         WHERE CMT_SEQ = #{command.cmtSeq}
           AND POST_SEQ = #{command.postSeq}

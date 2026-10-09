@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -107,6 +108,19 @@ public class CommunityController {
         command.setCmtSeq(cmtSeq);
         command.setCommentContent(body.content());
         service.updateComment(command);
+        return Map.of("success", true);
+    }
+
+    /** 로그인 사용자가 작성한 댓글을 삭제합니다. */
+    @DeleteMapping("/posts/{postSeq}/comments/{cmtSeq}")
+    public Map<String, Boolean> deleteComment(
+            HttpServletRequest request,
+            @PathVariable Long postSeq,
+            @PathVariable Long cmtSeq) {
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        command.setCmtSeq(cmtSeq);
+        service.deleteComment(command);
         return Map.of("success", true);
     }
 

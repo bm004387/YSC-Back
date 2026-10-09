@@ -112,6 +112,18 @@ public class CommunityServiceImpl implements CommunityService {
         }
     }
 
+    /** 로그인 사용자가 작성한 댓글만 삭제 상태로 변경합니다. */
+    @Override
+    @Transactional
+    public void deleteComment(CommunityPostCommandVO command) {
+        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
+        }
+        if (mapper.deleteComment(command) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "본인이 작성한 댓글만 삭제할 수 있습니다.");
+        }
+    }
+
     /** 게시물과 업로드된 미디어를 트랜잭션으로 저장합니다. */
     @Override
     @Transactional

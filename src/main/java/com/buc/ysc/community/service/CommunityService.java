@@ -27,6 +27,9 @@ public interface CommunityService {
     /** 작성자 본인의 댓글을 수정합니다. */
     void updateComment(CommunityPostCommandVO command);
 
+    /** 작성자 본인의 댓글을 삭제 상태로 변경합니다. */
+    void deleteComment(CommunityPostCommandVO command);
+
     /** 게시물과 첨부 파일을 저장합니다. */
     Long create(CommunityPostCommandVO command);
 

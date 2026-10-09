@@ -61,6 +61,9 @@ public interface CommunityMapper {
     /** 작성자 본인의 활성 댓글을 수정합니다. */
     int updateComment(@Param("command") CommunityPostCommandVO command);
 
+    /** 작성자 본인의 활성 댓글을 삭제 상태로 변경합니다. */
+    int deleteComment(@Param("command") CommunityPostCommandVO command);
+
     /** 사용자별 게시물 조회 기록을 저장합니다. */
     int markSeen(@Param("command") CommunityPostCommandVO command);
 

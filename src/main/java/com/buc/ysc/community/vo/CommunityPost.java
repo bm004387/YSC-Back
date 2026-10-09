@@ -32,6 +32,7 @@ public record CommunityPost(
             String usrNm,
             Long profileImageFilSeq,
             String cmtCn,
-            String cmtDtm
+            String cmtDtm,
+            boolean deleted
     ) {}
 }

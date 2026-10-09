@@ -47,9 +47,11 @@ public class FileStorageServiceImpl implements FileStorageService {
         }
 
         Long fileSeq = fileMapper.nextFileSeq();
-        String originalName = safeOriginalName(file.getOriginalFilename());
-        String extension = extensionOf(originalName);
-        String savedName = UUID.randomUUID() + extension;
+        String originalFilename = safeOriginalName(file.getOriginalFilename());
+        String extension = extensionOf(originalFilename);
+        if (extension.isBlank()) extension = extensionFromContentType(file.getContentType());
+        String originalName = nameWithoutExtension(originalFilename, extension);
+        String savedName = UUID.randomUUID().toString();
         Path directory = storageRoot.resolve(fileSeq.toString()).normalize();
         Path savedPath = directory.resolve(savedName).normalize();
         ensureInsideRoot(savedPath);
@@ -92,6 +94,10 @@ public class FileStorageServiceImpl implements FileStorageService {
     public Path pathOf(StoredFile file) {
         Path directory = Path.of(file.getFilPth()).toAbsolutePath().normalize();
         Path path = directory.resolve(file.getSavFilNm()).normalize();
+        if (!Files.isRegularFile(path) && file.getFilExt() != null && !file.getFilExt().isBlank()) {
+            // 이전 데이터는 SAV_FIL_NM에 확장자를 포함해 저장했으므로 구 데이터도 조회합니다.
+            path = directory.resolve(file.getSavFilNm() + file.getFilExt()).normalize();
+        }
         ensureInsideRoot(path);
         if (!Files.isRegularFile(path)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("FILE", "004"));
@@ -134,6 +140,25 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (dot < 0 || dot == name.length() - 1) return "";
         String extension = name.substring(dot).replaceAll("[^A-Za-z0-9.]", "").toLowerCase(Locale.ROOT);
         return extension.length() > 20 ? extension.substring(0, 20) : extension;
+    }
+
+    private String nameWithoutExtension(String name, String extension) {
+        if (extension == null || extension.isBlank() || !name.toLowerCase(Locale.ROOT).endsWith(extension)) {
+            return name;
+        }
+        return name.substring(0, name.length() - extension.length());
+    }
+
+    private String extensionFromContentType(String contentType) {
+        if (contentType == null) return ".bin";
+        return switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png" -> ".png";
+            case "image/gif" -> ".gif";
+            case "image/heic" -> ".heic";
+            case "image/webp" -> ".webp";
+            default -> ".bin";
+        };
     }
 
     private String safeContentType(String contentType) {

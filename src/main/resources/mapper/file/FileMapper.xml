@@ -21,7 +21,8 @@
         SELECT B.FIL_PTH AS filPth,
                D.SAV_FIL_NM AS savFilNm,
                D.ORG_FIL_NM AS orgFilNm,
-               D.CONT_TYP AS contTyp
+               D.CONT_TYP AS contTyp,
+               D.FIL_EXT AS filExt
           FROM FIL_BAS B
           JOIN FIL_DTL D ON D.FIL_SEQ = B.FIL_SEQ
          WHERE B.FIL_SEQ = #{filSeq}

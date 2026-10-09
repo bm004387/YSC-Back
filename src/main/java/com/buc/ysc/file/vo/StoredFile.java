@@ -5,6 +5,7 @@ public class StoredFile {
     private String savFilNm;
     private String orgFilNm;
     private String contTyp;
+    private String filExt;
 
     public String getFilPth() { return filPth; }
     public void setFilPth(String filPth) { this.filPth = filPth; }
@@ -14,4 +15,6 @@ public class StoredFile {
     public void setOrgFilNm(String orgFilNm) { this.orgFilNm = orgFilNm; }
     public String getContTyp() { return contTyp; }
     public void setContTyp(String contTyp) { this.contTyp = contTyp; }
+    public String getFilExt() { return filExt; }
+    public void setFilExt(String filExt) { this.filExt = filExt; }
 }

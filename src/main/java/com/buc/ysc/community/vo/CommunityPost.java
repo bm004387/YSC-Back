@@ -2,10 +2,24 @@ package com.buc.ysc.community.vo;
 
 import java.util.List;
 
+/** 피드에 표시할 게시물 및 반응 요약 정보입니다. */
 public record CommunityPost(
-        Long postSeq, String authorId, String authorName, String content, String createdAt,
-        long likeCount, long commentCount, boolean likedByMe, boolean savedByMe,
+        Long postSeq,
+        String authorId,
+        String authorName,
+        String content,
+        String createdAt,
+        long likeCount,
+        long commentCount,
+        boolean likedByMe,
+        boolean savedByMe,
         List<CommunityMedia> media
 ) {
-    public record CommunityMedia(Long filSeq, String mediaType, String contentType) {}
+
+    /** 게시물에 첨부된 미디어의 응답 정보입니다. */
+    public record CommunityMedia(
+            Long filSeq,
+            String mediaType,
+            String contentType
+    ) {}
 }

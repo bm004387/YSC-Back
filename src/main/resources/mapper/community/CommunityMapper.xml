@@ -4,7 +4,7 @@
 
     <!-- 게시물 생성에 사용할 다음 일련번호를 조회합니다. -->
     <select id="nextPostSeq" resultType="long">
-        SELECT nextval('TB_COMM_POST_SEQ')
+        SELECT nextval('ysc.tb_comm_post_seq')
     </select>
 
     <!-- 게시물 본문과 공개 범위를 저장합니다. -->

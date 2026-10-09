@@ -6,6 +6,8 @@ APP_NAME="ysc-backend"
 IMAGE_NAME="ysc-backend:latest"
 NETWORK_NAME="ysc_default"
 ENV_FILE=".env.prod"
+UPLOAD_DIR="${HOME}/ysc-uploads"
+UPLOAD_CONTAINER_PATH="/app/uploads"
 MESSAGE_CACHE_URL="http://127.0.0.1:8080/api/msg/all"
 MESSAGE_CACHE_RESPONSE=""
 
@@ -58,7 +60,17 @@ log INFO "[3/7] Gradle 빌드 및 검증"
 log INFO "[4/7] Docker 이미지 빌드"
 docker build --pull -t "$IMAGE_NAME" .
 
-log INFO "[5/7] 기존 애플리케이션 컨테이너 교체"
+log INFO "[5/8] 업로드 파일 저장소 준비"
+mkdir -p "$UPLOAD_DIR"
+if [[ -z "$(find "$UPLOAD_DIR" -mindepth 1 -print -quit)" ]] \
+    && docker container inspect "$APP_NAME" >/dev/null 2>&1 \
+    && docker exec "$APP_NAME" test -d "$UPLOAD_CONTAINER_PATH"; then
+    # 기존 컨테이너의 업로드를 영구 호스트 디렉터리로 옮겨 컨테이너 교체 후에도 보존합니다.
+    docker cp "$APP_NAME:$UPLOAD_CONTAINER_PATH/." "$UPLOAD_DIR/"
+    log INFO "기존 컨테이너의 업로드 파일을 영구 저장 경로로 복사했습니다."
+fi
+
+log INFO "[6/8] 기존 애플리케이션 컨테이너 교체"
 if docker container inspect "$APP_NAME" >/dev/null 2>&1; then
     docker rm -f "$APP_NAME" >/dev/null
     log INFO "기존 컨테이너를 제거했습니다."
@@ -66,13 +78,15 @@ else
     log INFO "기존 컨테이너가 없어 신규 배포로 진행합니다."
 fi
 
-log INFO "[6/7] 새 애플리케이션 컨테이너 시작"
+log INFO "[7/8] 새 애플리케이션 컨테이너 시작"
 docker run -d \
     --name "$APP_NAME" \
     --network "$NETWORK_NAME" \
     --env-file "$ENV_FILE" \
     --env SPRING_PROFILES_ACTIVE=prod \
+    --env "FILE_STORAGE_ROOT=$UPLOAD_CONTAINER_PATH" \
     --publish 127.0.0.1:8080:8080 \
+    --volume "$UPLOAD_DIR:$UPLOAD_CONTAINER_PATH" \
     --restart unless-stopped \
     --label "com.ysc.deploy.commit=$DEPLOY_COMMIT" \
     "$IMAGE_NAME" >/dev/null
@@ -114,7 +128,7 @@ else
 fi
 log INFO "메시지 캐시를 DB 기준으로 갱신했습니다 (항목=${MESSAGE_COUNT})."
 
-log INFO "[7/7] 배포 결과"
+log INFO "[8/8] 배포 결과"
 docker ps --filter "name=^/${APP_NAME}$" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 log INFO "배포 완료 (commit=$DEPLOY_COMMIT)"
 log INFO "애플리케이션 최근 로그"

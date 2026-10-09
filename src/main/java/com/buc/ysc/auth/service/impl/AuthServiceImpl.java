@@ -87,14 +87,14 @@ public class AuthServiceImpl implements AuthService {
         // 2. 사용자 존재 여부 확인
         if (user == null) {
             System.out.println("USER NOT FOUND");
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "004"));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
         }
 
         // 3. 비밀번호 확인
         boolean passwordMatches = passwordEncoder.matches(request.pwd(),user.getPwd());
 
         if (!passwordMatches) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "004"));
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
         }
 
         // 4. Redis 세션 생성

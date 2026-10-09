@@ -2,6 +2,29 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.buc.ysc.community.mapper.CommunityMapper">
 
+    <!-- 로그인 사용자의 활성 게시물·승인된 팔로워·팔로잉 수를 조회합니다. -->
+    <select id="selectProfileSummary" resultType="com.buc.ysc.community.vo.CommunityProfileSummaryVO">
+        SELECT
+               (
+                   SELECT COUNT(*)
+                   FROM TB_COMM_POST P
+                   WHERE P.USR_ID = #{usrId}
+                     AND P.POST_STAT = 'ACTIVE'
+               ) AS postCount
+            ,  (
+                   SELECT COUNT(*)
+                   FROM TB_COMM_FOLLOW F
+                   WHERE F.FOLLOWING_USR_ID = #{usrId}
+                     AND F.FOLLOW_STAT = 'ACCEPTED'
+               ) AS followerCount
+            ,  (
+                   SELECT COUNT(*)
+                   FROM TB_COMM_FOLLOW F
+                   WHERE F.FOLLOWER_USR_ID = #{usrId}
+                     AND F.FOLLOW_STAT = 'ACCEPTED'
+               ) AS followingCount
+    </select>
+
     <!-- 게시물 생성에 사용할 다음 일련번호를 조회합니다. -->
     <select id="nextPostSeq" resultType="long">
         SELECT nextval('ysc.tb_comm_post_seq')

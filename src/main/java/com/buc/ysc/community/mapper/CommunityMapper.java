@@ -3,11 +3,15 @@ package com.buc.ysc.community.mapper;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
+import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
 /** 커뮤니티 SQL 매퍼 인터페이스입니다. */
 public interface CommunityMapper {
+
+    /** 내 게시물·팔로워·팔로잉 수를 조회합니다. */
+    CommunityProfileSummaryVO selectProfileSummary(@Param("usrId") String usrId);
 
     /** 게시물 일련번호를 생성합니다. */
     Long nextPostSeq();

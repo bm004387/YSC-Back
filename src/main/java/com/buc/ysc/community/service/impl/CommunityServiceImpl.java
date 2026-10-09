@@ -5,6 +5,7 @@ import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
+import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,12 @@ public class CommunityServiceImpl implements CommunityService {
     public CommunityServiceImpl(CommunityMapper mapper, FileStorageService fileStorage) {
         this.mapper = mapper;
         this.fileStorage = fileStorage;
+    }
+
+    /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
+    @Override
+    public CommunityProfileSummaryVO profileSummary(String userId) {
+        return mapper.selectProfileSummary(userId);
     }
 
     /** 피드 결과에 첨부 파일 정보를 합쳐 반환합니다. */

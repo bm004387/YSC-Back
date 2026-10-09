@@ -4,6 +4,7 @@ import com.buc.ysc.community.mapper.CommunityMapper;
 import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPost;
+import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.security.SessionManager;
@@ -55,6 +56,12 @@ public class CommunityController {
             @RequestParam(defaultValue = "recommended") String type,
             @RequestParam(defaultValue = "20") int limit) {
         return service.feed(session(request).usrId(), type, limit);
+    }
+
+    /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
+    @GetMapping("/profile/summary")
+    public CommunityProfileSummaryVO profileSummary(HttpServletRequest request) {
+        return service.profileSummary(session(request).usrId());
     }
 
     /** 게시물의 댓글 목록을 반환합니다. */

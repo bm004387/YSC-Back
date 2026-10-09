@@ -7,6 +7,7 @@ import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.user.mapper.UserMapper;
 import com.buc.ysc.user.vo.request.AddressChangeRequest;
 import com.buc.ysc.user.vo.request.PasswordChangeRequest;
+import com.buc.ysc.user.vo.request.PasswordVerifyRequest;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.user.vo.response.UserProfileResponse;
 import com.buc.ysc.util.MsgUtil;
@@ -59,7 +60,9 @@ public class UserController {
         UserSession session = requireSession(tokenFrom(request));
         UserVO user = userMapper.selectByUsrId(session.usrId());
         if (user == null || body.currentPassword() == null || !passwordEncoder.matches(body.currentPassword(), user.getPwd())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("MYINFO", "001"));
+            return ResponseEntity.ok(java.util.Map.of(
+                    "success", false,
+                    "message", msgUtil.getMsg("MYINFO", "001")));
         }
         if (body.newPassword() == null || body.newPassword().length() < 8) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("MYINFO", "002"));
@@ -68,7 +71,19 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("COMMON", "003"));
         }
         userMapper.updatePassword(session.usrId(), passwordEncoder.encode(body.newPassword()));
-        return ResponseEntity.ok(java.util.Map.of("message", msgUtil.getMsg("MYINFO", "003")));
+        return ResponseEntity.ok(java.util.Map.of(
+                "success", true,
+                "message", msgUtil.getMsg("MYINFO", "003")));
+    }
+
+    @PostMapping("/me/password/verify")
+    public ResponseEntity<?> verifyCurrentPassword(HttpServletRequest request, @RequestBody PasswordVerifyRequest body) {
+        UserSession session = requireSession(tokenFrom(request));
+        UserVO user = userMapper.selectByUsrId(session.usrId());
+        boolean valid = user != null && body.currentPassword() != null
+                && passwordEncoder.matches(body.currentPassword(), user.getPwd());
+        String message = msgUtil.getMsg("MYINFO", valid ? "014" : "001");
+        return ResponseEntity.ok(java.util.Map.of("valid", valid, "message", message));
     }
 
     @PutMapping("/me/address")

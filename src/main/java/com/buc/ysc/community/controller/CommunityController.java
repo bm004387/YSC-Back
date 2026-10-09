@@ -79,6 +79,21 @@ public class CommunityController {
         return Map.of("success", true);
     }
 
+    /** 로그인 사용자가 작성한 댓글을 수정합니다. */
+    @PutMapping("/posts/{postSeq}/comments/{cmtSeq}")
+    public Map<String, Boolean> updateComment(
+            HttpServletRequest request,
+            @PathVariable Long postSeq,
+            @PathVariable Long cmtSeq,
+            @RequestBody CommentRequest body) {
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        command.setCmtSeq(cmtSeq);
+        command.setCommentContent(body.content());
+        service.updateComment(command);
+        return Map.of("success", true);
+    }
+
     /** 본문과 첨부 파일을 새 게시물로 등록합니다. */
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Long> create(

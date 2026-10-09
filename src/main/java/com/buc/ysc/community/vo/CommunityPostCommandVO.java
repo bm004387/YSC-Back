@@ -12,6 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class CommunityPostCommandVO extends CommonVO {
 
     private Long postSeq;
+    private Long cmtSeq;
     private String usrId;
     private String content;
     private String commentContent;

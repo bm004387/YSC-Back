@@ -87,7 +87,27 @@
           AND (
               (#{feedType} = 'mine' AND P.USR_ID = #{usrId})
               OR (
-                  #{feedType} &lt;&gt; 'mine'
+                  #{feedType} = 'saved'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM TB_COMM_POST_SAVE S
+                      WHERE S.POST_SEQ = P.POST_SEQ
+                        AND S.USR_ID = #{usrId}
+                  )
+                  AND (
+                      P.VIS_TYP = 'PUBLIC'
+                      OR P.USR_ID = #{usrId}
+                      OR EXISTS (
+                          SELECT 1
+                          FROM TB_COMM_FOLLOW F
+                          WHERE F.FOLLOWER_USR_ID = #{usrId}
+                            AND F.FOLLOWING_USR_ID = P.USR_ID
+                            AND F.FOLLOW_STAT = 'ACCEPTED'
+                      )
+                  )
+              )
+              OR (
+                  #{feedType} NOT IN ('mine', 'saved')
                   AND (
                       P.VIS_TYP = 'PUBLIC'
                       OR P.USR_ID = #{usrId}
@@ -102,7 +122,7 @@
               )
           )
           AND (
-              #{feedType} = 'mine'
+              #{feedType} IN ('mine', 'saved')
               OR NOT EXISTS (
                   SELECT 1
                   FROM TB_COMM_POST_SEEN V
@@ -122,7 +142,7 @@
           )
         ORDER BY
             CASE
-                WHEN #{feedType} IN ('mine', 'popular') THEN 0
+                WHEN #{feedType} IN ('mine', 'popular', 'saved') THEN 0
                 WHEN EXISTS (
                     SELECT 1
                     FROM TB_COMM_FOLLOW F
@@ -200,6 +220,7 @@
             ,  PARENT_CMT_SEQ
             ,  CMT_CN
             ,  CMT_STAT
+            ,  CMT_DTM
             ,  FRST_REG_USER_ID
         )
         VALUES (
@@ -208,9 +229,22 @@
             ,  #{command.parentCmtSeq}
             ,  #{command.commentContent}
             ,  'ACTIVE'
+            ,  CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Seoul'
             ,  #{command.frstRegUserId}
         )
     </insert>
+
+    <!-- 작성자 ID와 게시물 ID가 일치하는 댓글만 수정합니다. -->
+    <update id="updateComment">
+        UPDATE TB_COMM_CMT
+           SET CMT_CN = #{command.commentContent}
+            ,  LAST_MOD_USER_ID = #{command.userId}
+            ,  LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+        WHERE CMT_SEQ = #{command.cmtSeq}
+          AND POST_SEQ = #{command.postSeq}
+          AND USR_ID = #{command.usrId}
+          AND CMT_STAT = 'ACTIVE'
+    </update>
 
     <!-- 사용자가 게시물을 확인한 기록을 최초 1회 저장합니다. -->
     <insert id="markSeen">

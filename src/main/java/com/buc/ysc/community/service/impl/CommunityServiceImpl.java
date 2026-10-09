@@ -29,7 +29,7 @@ public class CommunityServiceImpl implements CommunityService {
     /** 피드 결과에 첨부 파일 정보를 합쳐 반환합니다. */
     @Override
     public List<CommunityPost> feed(String userId, String feedType, int limit) {
-        String type = List.of("recommended", "following", "popular", "mine").contains(feedType)
+        String type = List.of("recommended", "following", "popular", "mine", "saved").contains(feedType)
                 ? feedType
                 : "recommended";
         List<CommunityPostRowVO> rows = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
@@ -70,6 +70,22 @@ public class CommunityServiceImpl implements CommunityService {
         }
         command.setCommentContent(command.getCommentContent().trim());
         mapper.insertComment(command);
+    }
+
+    /** 로그인 사용자가 작성한 활성 댓글만 수정합니다. */
+    @Override
+    @Transactional
+    public void updateComment(CommunityPostCommandVO command) {
+        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
+        }
+        if (command.getCommentContent() == null || command.getCommentContent().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 내용을 입력해 주세요.");
+        }
+        command.setCommentContent(command.getCommentContent().trim());
+        if (mapper.updateComment(command) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "본인이 작성한 댓글만 수정할 수 있습니다.");
+        }
     }
 
     /** 게시물과 업로드된 미디어를 트랜잭션으로 저장합니다. */

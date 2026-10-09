@@ -235,6 +235,57 @@
         ORDER BY C.CMT_DTM, C.CMT_SEQ
     </select>
 
+    <!-- 여러 게시물별로 공개 권한을 확인한 뒤 최신 활성 댓글을 두 건까지 조회합니다. -->
+    <select id="selectCommentPreviews" resultType="com.buc.ysc.community.vo.CommunityCommentPreviewVO">
+        WITH RANKED_COMMENTS AS (
+            SELECT
+                   C.POST_SEQ AS postSeq
+                ,  C.CMT_SEQ AS cmtSeq
+                ,  C.PARENT_CMT_SEQ AS parentCmtSeq
+                ,  C.USR_ID AS usrId
+                ,  U.USR_NM AS usrNm
+                ,  U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
+                ,  C.CMT_CN AS cmtCn
+                ,  TO_CHAR(C.CMT_DTM, 'YYYY-MM-DD"T"HH24:MI:SS') AS cmtDtm
+                ,  ROW_NUMBER() OVER (
+                       PARTITION BY C.POST_SEQ
+                       ORDER BY C.CMT_DTM DESC, C.CMT_SEQ DESC
+                   ) AS rowNum
+            FROM TB_COMM_CMT C
+            JOIN TB_USR U ON U.USR_ID = C.USR_ID
+            JOIN TB_COMM_POST P ON P.POST_SEQ = C.POST_SEQ
+            WHERE C.CMT_STAT = 'ACTIVE'
+              AND P.POST_STAT = 'ACTIVE'
+              AND P.POST_SEQ IN
+              <foreach collection="postSeqs" item="postSeq" open="(" separator="," close=")">
+                  #{postSeq}
+              </foreach>
+              AND (
+                  P.VIS_TYP = 'PUBLIC'
+                  OR P.USR_ID = #{usrId}
+                  OR EXISTS (
+                      SELECT 1
+                      FROM TB_COMM_FOLLOW F
+                      WHERE F.FOLLOWER_USR_ID = #{usrId}
+                        AND F.FOLLOWING_USR_ID = P.USR_ID
+                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                  )
+              )
+        )
+        SELECT
+               postSeq
+            ,  cmtSeq
+            ,  parentCmtSeq
+            ,  usrId
+            ,  usrNm
+            ,  profileImageFilSeq
+            ,  cmtCn
+            ,  cmtDtm
+        FROM RANKED_COMMENTS
+        WHERE rowNum &lt;= 2
+        ORDER BY postSeq, rowNum DESC
+    </select>
+
     <!-- 게시물 댓글과 등록 시스템 컬럼을 저장합니다. -->
     <insert id="insertComment">
         INSERT INTO TB_COMM_CMT (

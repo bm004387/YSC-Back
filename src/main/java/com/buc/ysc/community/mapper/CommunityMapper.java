@@ -4,6 +4,7 @@ import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
+import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -12,6 +13,11 @@ public interface CommunityMapper {
 
     /** 내 게시물·팔로워·팔로잉 수를 조회합니다. */
     CommunityProfileSummaryVO selectProfileSummary(@Param("usrId") String usrId);
+
+    /** 여러 게시물 각각의 최신 댓글을 두 건까지 조회합니다. */
+    List<CommunityCommentPreviewVO> selectCommentPreviews(
+            @Param("usrId") String usrId,
+            @Param("postSeqs") List<Long> postSeqs);
 
     /** 게시물 일련번호를 생성합니다. */
     Long nextPostSeq();

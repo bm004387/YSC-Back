@@ -3,6 +3,7 @@ package com.buc.ysc.community.service;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
+import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import java.util.List;
 
 /** 커뮤니티 업무 처리 기능을 정의합니다. */
@@ -10,6 +11,9 @@ public interface CommunityService {
 
     /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
     CommunityProfileSummaryVO profileSummary(String userId);
+
+    /** 여러 게시물의 댓글 미리보기를 일괄 조회합니다. */
+    List<CommunityCommentPreviewVO> commentPreviews(String userId, List<Long> postSeqs);
 
     /** 피드 종류에 맞는 게시물과 반응 정보를 조회합니다. */
     List<CommunityPost> feed(String userId, String feedType, int limit);

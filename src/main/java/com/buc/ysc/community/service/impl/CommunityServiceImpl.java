@@ -6,6 +6,7 @@ import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
+import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,18 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     public CommunityProfileSummaryVO profileSummary(String userId) {
         return mapper.selectProfileSummary(userId);
+    }
+
+    /** 게시물 ID를 확인하고 댓글 미리보기를 일괄 조회합니다. */
+    @Override
+    public List<CommunityCommentPreviewVO> commentPreviews(String userId, List<Long> postSeqs) {
+        if (postSeqs == null || postSeqs.isEmpty()) {
+            return List.of();
+        }
+        if (postSeqs.size() > 50) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시물은 한 번에 50개까지 조회할 수 있습니다.");
+        }
+        return mapper.selectCommentPreviews(userId, postSeqs.stream().distinct().toList());
     }
 
     /** 피드 결과에 첨부 파일 정보를 합쳐 반환합니다. */

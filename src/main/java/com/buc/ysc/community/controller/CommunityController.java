@@ -4,6 +4,7 @@ import com.buc.ysc.community.mapper.CommunityMapper;
 import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPost;
+import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
@@ -62,6 +63,14 @@ public class CommunityController {
     @GetMapping("/profile/summary")
     public CommunityProfileSummaryVO profileSummary(HttpServletRequest request) {
         return service.profileSummary(session(request).usrId());
+    }
+
+    /** 여러 게시물별 최신 댓글 두 건을 한 번에 반환합니다. */
+    @GetMapping("/comments/previews")
+    public List<CommunityCommentPreviewVO> commentPreviews(
+            HttpServletRequest request,
+            @RequestParam("postSeq") List<Long> postSeqs) {
+        return service.commentPreviews(session(request).usrId(), postSeqs);
     }
 
     /** 게시물의 댓글 목록을 반환합니다. */

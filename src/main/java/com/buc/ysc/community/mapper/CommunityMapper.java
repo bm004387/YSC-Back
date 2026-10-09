@@ -1,6 +1,7 @@
 package com.buc.ysc.community.mapper;
 
 import com.buc.ysc.community.vo.CommunityPost;
+import com.buc.ysc.community.vo.CommunityPostRowVO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -27,7 +28,7 @@ public interface CommunityMapper {
             @Param("usrId") String usrId);
 
     /** 사용자와 피드 종류에 해당하는 게시물을 조회합니다. */
-    List<CommunityPost> selectFeed(
+    List<CommunityPostRowVO> selectFeed(
             @Param("usrId") String usrId,
             @Param("feedType") String feedType,
             @Param("limit") int limit);

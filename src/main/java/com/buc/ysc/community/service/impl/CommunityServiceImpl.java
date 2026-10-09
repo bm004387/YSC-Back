@@ -3,6 +3,7 @@ package com.buc.ysc.community.service.impl;
 import com.buc.ysc.community.mapper.CommunityMapper;
 import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPost;
+import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,19 +31,19 @@ public class CommunityServiceImpl implements CommunityService {
         String type = List.of("recommended", "following", "popular", "mine").contains(feedType)
                 ? feedType
                 : "recommended";
-        List<CommunityPost> posts = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
-        return posts.stream()
-                .map(post -> new CommunityPost(
-                        post.postSeq(),
-                        post.authorId(),
-                        post.authorName(),
-                        post.content(),
-                        post.createdAt(),
-                        post.likeCount(),
-                        post.commentCount(),
-                        post.likedByMe(),
-                        post.savedByMe(),
-                        mapper.selectMedia(post.postSeq())))
+        List<CommunityPostRowVO> rows = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
+        return rows.stream()
+                .map(row -> new CommunityPost(
+                        row.postSeq(),
+                        row.authorId(),
+                        row.authorName(),
+                        row.content(),
+                        row.createdAt(),
+                        row.likeCount(),
+                        row.commentCount(),
+                        row.likedByMe(),
+                        row.savedByMe(),
+                        mapper.selectMedia(row.postSeq())))
                 .toList();
     }
 

@@ -50,7 +50,7 @@
     </insert>
 
     <!-- 피드 종류에 맞춰 미조회 게시물 또는 내 게시물을 조회합니다. -->
-    <select id="selectFeed" resultType="com.buc.ysc.community.vo.CommunityPost">
+    <select id="selectFeed" resultType="com.buc.ysc.community.vo.CommunityPostRowVO">
         SELECT
                P.POST_SEQ AS postSeq
             ,  P.USR_ID AS authorId

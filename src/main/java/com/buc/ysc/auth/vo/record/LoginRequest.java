@@ -8,7 +8,9 @@ public record LoginRequest(
         String usrId,
 
         @NotBlank
-        String pwd
+        String pwd,
+
+        boolean rememberMe
 
 ) {
 }

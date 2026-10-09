@@ -9,6 +9,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -36,7 +37,7 @@ public class SessionManager {
      * 실제 accessToken 자체는 Redis에 저장하지 않고
      * accessToken의 SHA-256 해시값을 Redis Key로 사용한다.
      */
-    public String createSession(UserSession session) {
+    public String createSession(UserSession session, boolean rememberMe) {
 
         // 256bit = 32byte 랜덤 토큰 생성
         byte[] bytes = new byte[32];
@@ -64,8 +65,10 @@ public class SessionManager {
         // Redis Hash에 세션 저장
         redisTemplate.opsForHash().putAll(redisKey, values);
 
-        // 세션 만료시간 30분 설정
-        redisTemplate.expire(redisKey, SESSION_TTL);
+        // 자동 로그인 선택 시 로그아웃 전까지 세션을 유지하고, 아니면 30분 유휴 만료를 적용합니다.
+        if (!rememberMe) {
+            redisTemplate.expire(redisKey, SESSION_TTL);
+        }
 
         return token;
     }
@@ -104,9 +107,8 @@ public class SessionManager {
                     Objects.toString(values.get("dtlAdr"), "")
             );
 
-            // 정상적인 요청이 들어오면
-            // 세션 만료시간을 다시 30분으로 연장
-            redisTemplate.expire(redisKey, SESSION_TTL);
+            // 만료 시간이 설정된 세션만 슬라이딩 연장합니다. TTL -1은 자동 로그인 세션입니다.
+            refreshTemporarySession(redisKey);
 
             return session;
 
@@ -142,7 +144,7 @@ public class SessionManager {
         String redisKey = getRedisKey(token);
         redisTemplate.opsForHash().put(redisKey, "adr", Objects.toString(adr, ""));
         redisTemplate.opsForHash().put(redisKey, "dtlAdr", Objects.toString(dtlAdr, ""));
-        redisTemplate.expire(redisKey, SESSION_TTL);
+        refreshTemporarySession(redisKey);
     }
 
     /**
@@ -187,13 +189,15 @@ public class SessionManager {
         }
     }
 
-    /**
-     * 세션 만료시간
-     *
-     * 30분 = 1800초
-     */
-    public long getExpiresInSeconds() {
+    /** 자동 로그인 세션은 0(만료 없음), 일반 세션은 30분을 반환합니다. */
+    public long getExpiresInSeconds(boolean rememberMe) {
+        return rememberMe ? 0 : SESSION_TTL.toSeconds();
+    }
 
-        return SESSION_TTL.toSeconds();
+    private void refreshTemporarySession(String redisKey) {
+        Long ttl = redisTemplate.getExpire(redisKey, TimeUnit.SECONDS);
+        if (ttl != null && ttl >= 0) {
+            redisTemplate.expire(redisKey, SESSION_TTL);
+        }
     }
 }

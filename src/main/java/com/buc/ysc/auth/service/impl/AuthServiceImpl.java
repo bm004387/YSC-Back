@@ -107,7 +107,7 @@ public class AuthServiceImpl implements AuthService {
                                                 user.getDtlAdr()
                                         );
 
-        String accessToken = sessionManager.createSession(session);
+        String accessToken = sessionManager.createSession(session, request.rememberMe());
 
         // 5. 사용자 정보 생성
         UserInfoResponse userInfo = new UserInfoResponse(
@@ -120,6 +120,6 @@ public class AuthServiceImpl implements AuthService {
                                                         );
 
         // 6. 로그인 응답
-        return new LoginResponse(accessToken,"Bearer",sessionManager.getExpiresInSeconds(),userInfo);
+        return new LoginResponse(accessToken, "Bearer", sessionManager.getExpiresInSeconds(request.rememberMe()), userInfo);
     }
 }

@@ -2,6 +2,7 @@ package com.buc.ysc.file.vo;
 
 public class StoredFile {
     private String filPth;
+    private String filCd;
     private String savFilNm;
     private String orgFilNm;
     private String contTyp;
@@ -9,6 +10,8 @@ public class StoredFile {
 
     public String getFilPth() { return filPth; }
     public void setFilPth(String filPth) { this.filPth = filPth; }
+    public String getFilCd() { return filCd; }
+    public void setFilCd(String filCd) { this.filCd = filCd; }
     public String getSavFilNm() { return savFilNm; }
     public void setSavFilNm(String savFilNm) { this.savFilNm = savFilNm; }
     public String getOrgFilNm() { return orgFilNm; }

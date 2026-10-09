@@ -6,6 +6,8 @@ import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.util.MsgUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +26,7 @@ import java.util.UUID;
 public class FileStorageServiceImpl implements FileStorageService {
 
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
+    private static final Logger log = LoggerFactory.getLogger(FileStorageServiceImpl.class);
 
     private final FileMapper fileMapper;
     private final MsgUtil msgUtil;
@@ -52,7 +55,8 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (extension.isBlank()) extension = extensionFromContentType(file.getContentType());
         String originalName = nameWithoutExtension(originalFilename, extension);
         String savedName = UUID.randomUUID().toString();
-        Path directory = storageRoot.resolve(fileSeq.toString()).normalize();
+        String directoryCode = normalizeDirectoryCode(fileCode);
+        Path directory = storageRoot.resolve(directoryCode).normalize();
         Path savedPath = directory.resolve(savedName).normalize();
         ensureInsideRoot(savedPath);
 
@@ -67,6 +71,7 @@ public class FileStorageServiceImpl implements FileStorageService {
             if (baseRows != 1 || detailRows != 1) {
                 throw new IllegalStateException("파일 메타데이터 저장 결과가 올바르지 않습니다.");
             }
+            log.info("File stored: filSeq={}, filCd={}, path={}", fileSeq, directoryCode, savedPath);
             return fileSeq;
         } catch (IOException | RuntimeException exception) {
             try {
@@ -98,6 +103,17 @@ public class FileStorageServiceImpl implements FileStorageService {
             // 이전 데이터는 SAV_FIL_NM에 확장자를 포함해 저장했으므로 구 데이터도 조회합니다.
             path = directory.resolve(file.getSavFilNm() + file.getFilExt()).normalize();
         }
+        if (!Files.isRegularFile(path)) {
+            String directoryCode = directoryCodeFor(file.getFilCd());
+            if (directoryCode != null) {
+                Path codeDirectory = storageRoot.resolve(directoryCode).normalize();
+                Path codePath = codeDirectory.resolve(file.getSavFilNm()).normalize();
+                if (!Files.isRegularFile(codePath) && file.getFilExt() != null && !file.getFilExt().isBlank()) {
+                    codePath = codeDirectory.resolve(file.getSavFilNm() + file.getFilExt()).normalize();
+                }
+                if (Files.isRegularFile(codePath)) path = codePath;
+            }
+        }
         ensureInsideRoot(path);
         if (!Files.isRegularFile(path)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("FILE", "004"));
@@ -114,8 +130,8 @@ public class FileStorageServiceImpl implements FileStorageService {
         Path path = pathOf(file);
         try {
             Files.deleteIfExists(path);
-            Path directory = path.getParent();
-            if (directory != null) Files.deleteIfExists(directory);
+            // File directories are shared by file code (for example 2=profile image).
+            // Keep the directory while it may contain other files.
         } catch (IOException exception) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     msgUtil.getMsg("FILE", "006"), exception);
@@ -128,6 +144,20 @@ public class FileStorageServiceImpl implements FileStorageService {
         if (!path.normalize().startsWith(storageRoot)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("FILE", "005"));
         }
+    }
+
+    private String normalizeDirectoryCode(String fileCode) {
+        if (fileCode == null || !fileCode.matches("[0-9]{1,20}")) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("FILE", "005"));
+        }
+        return fileCode;
+    }
+
+    private String directoryCodeFor(String fileCode) {
+        if (fileCode != null && fileCode.matches("[0-9]{1,20}")) return fileCode;
+        // 이전 배포의 프로필 코드를 새 디렉터리 코드에 연결합니다.
+        if ("PROFILE".equalsIgnoreCase(fileCode)) return "2";
+        return null;
     }
 
     private String safeOriginalName(String name) {

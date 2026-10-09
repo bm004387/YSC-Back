@@ -111,7 +111,8 @@ public class UserController {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("MYINFO", "010"));
         }
-        Long newFileSeq = fileStorageService.store(file, "USER", "PROFILE", session.usrId());
+        // FIL_CD 2: 프로필 사진. 실제 저장 경로는 {FILE_STORAGE_ROOT}/2 입니다.
+        Long newFileSeq = fileStorageService.store(file, "USER", "2", session.usrId());
         int updatedRows = userMapper.updateProfileImageFileSeq(session.usrId(), newFileSeq);
         if (updatedRows != 1) {
             fileStorageService.delete(newFileSeq);

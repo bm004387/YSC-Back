@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.buc.ysc.community.mapper.CommunityMapper">
+  <select id="nextPostSeq" resultType="long">SELECT nextval('TB_COMM_POST_SEQ')</select>
+  <insert id="insertPost">
+    INSERT INTO TB_COMM_POST (POST_SEQ, USR_ID, POST_TTL, POST_CN, POST_STAT, VIS_TYP, POST_DTM, FRST_REG_USER_ID)
+    VALUES (#{postSeq}, #{usrId}, #{title}, #{content}, 'ACTIVE', #{visibility}, CURRENT_TIMESTAMP, #{usrId})
+  </insert>
+  <insert id="insertPostFile">
+    INSERT INTO TB_COMM_POST_FILE (POST_SEQ, FIL_SEQ, SORT_ORD, MEDIA_TYP, FRST_REG_USER_ID)
+    VALUES (#{postSeq}, #{filSeq}, #{sortOrder}, #{mediaType}, #{usrId})
+  </insert>
+  <select id="selectFeed" resultType="com.buc.ysc.community.vo.CommunityPost">
+    SELECT P.POST_SEQ AS postSeq, P.USR_ID AS authorId, U.USR_NM AS authorName, P.POST_CN AS content,
+      to_char(P.POST_DTM, 'YYYY-MM-DD"T"HH24:MI:SS') AS createdAt,
+      (SELECT COUNT(*) FROM TB_COMM_POST_LIKE L WHERE L.POST_SEQ=P.POST_SEQ) AS likeCount,
+      (SELECT COUNT(*) FROM TB_COMM_CMT C WHERE C.POST_SEQ=P.POST_SEQ AND C.CMT_STAT='ACTIVE') AS commentCount,
+      EXISTS(SELECT 1 FROM TB_COMM_POST_LIKE L WHERE L.POST_SEQ=P.POST_SEQ AND L.USR_ID=#{usrId}) AS likedByMe,
+      EXISTS(SELECT 1 FROM TB_COMM_POST_SAVE S WHERE S.POST_SEQ=P.POST_SEQ AND S.USR_ID=#{usrId}) AS savedByMe
+    FROM TB_COMM_POST P JOIN TB_USR U ON U.USR_ID=P.USR_ID
+    WHERE P.POST_STAT='ACTIVE' AND (P.VIS_TYP='PUBLIC' OR P.USR_ID=#{usrId} OR EXISTS(
+      SELECT 1 FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID=#{usrId} AND F.FOLLOWING_USR_ID=P.USR_ID AND F.FOLLOW_STAT='ACCEPTED'))
+      AND NOT EXISTS(SELECT 1 FROM TB_COMM_POST_SEEN V WHERE V.POST_SEQ=P.POST_SEQ AND V.USR_ID=#{usrId})
+      AND (#{feedType} <> 'following' OR EXISTS(
+        SELECT 1 FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID=#{usrId} AND F.FOLLOWING_USR_ID=P.USR_ID AND F.FOLLOW_STAT='ACCEPTED'))
+    ORDER BY CASE WHEN #{feedType}='popular' THEN 0 WHEN EXISTS(
+      SELECT 1 FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID=#{usrId} AND F.FOLLOWING_USR_ID=P.USR_ID AND F.FOLLOW_STAT='ACCEPTED') THEN 0 ELSE 1 END,
+      CASE WHEN #{feedType}='popular' THEN (SELECT COUNT(*) FROM TB_COMM_POST_LIKE L WHERE L.POST_SEQ=P.POST_SEQ) ELSE 0 END DESC,
+      P.POST_DTM DESC LIMIT #{limit}
+  </select>
+  <select id="selectMedia" resultType="com.buc.ysc.community.vo.CommunityPost$CommunityMedia">
+    SELECT PF.FIL_SEQ AS filSeq, PF.MEDIA_TYP AS mediaType, D.CONT_TYP AS contentType
+    FROM TB_COMM_POST_FILE PF JOIN FIL_DTL D ON D.FIL_SEQ=PF.FIL_SEQ
+    WHERE PF.POST_SEQ=#{postSeq} ORDER BY PF.SORT_ORD
+  </select>
+  <insert id="markSeen">INSERT INTO TB_COMM_POST_SEEN (USR_ID, POST_SEQ, SEEN_DTM) VALUES (#{usrId}, #{postSeq}, CURRENT_TIMESTAMP) ON CONFLICT (USR_ID, POST_SEQ) DO NOTHING</insert>
+  <insert id="addLike">INSERT INTO TB_COMM_POST_LIKE (POST_SEQ, USR_ID) VALUES (#{postSeq}, #{usrId}) ON CONFLICT DO NOTHING</insert>
+  <delete id="removeLike">DELETE FROM TB_COMM_POST_LIKE WHERE POST_SEQ=#{postSeq} AND USR_ID=#{usrId}</delete>
+  <insert id="addSave">INSERT INTO TB_COMM_POST_SAVE (POST_SEQ, USR_ID) VALUES (#{postSeq}, #{usrId}) ON CONFLICT DO NOTHING</insert>
+  <delete id="removeSave">DELETE FROM TB_COMM_POST_SAVE WHERE POST_SEQ=#{postSeq} AND USR_ID=#{usrId}</delete>
+  <select id="canReadFile" resultType="int">
+    SELECT COUNT(*) FROM TB_COMM_POST_FILE PF JOIN TB_COMM_POST P ON P.POST_SEQ=PF.POST_SEQ
+    WHERE PF.FIL_SEQ=#{filSeq} AND P.POST_STAT='ACTIVE'
+      AND (P.VIS_TYP='PUBLIC' OR P.USR_ID=#{usrId} OR EXISTS(
+        SELECT 1 FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID=#{usrId} AND F.FOLLOWING_USR_ID=P.USR_ID AND F.FOLLOW_STAT='ACCEPTED'))
+  </select>
+</mapper>

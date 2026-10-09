@@ -38,6 +38,7 @@ public class CommunityServiceImpl implements CommunityService {
                         row.getPostSeq(),
                         row.getAuthorId(),
                         row.getAuthorName(),
+                        row.getProfileImageFilSeq(),
                         row.getContent(),
                         row.getCreatedAt(),
                         row.getLikeCount(),
@@ -46,6 +47,15 @@ public class CommunityServiceImpl implements CommunityService {
                         row.isSavedByMe(),
                         mapper.selectMedia(row.getPostSeq())))
                 .toList();
+    }
+
+    /** 게시물 공개 권한을 검사한 뒤 활성 댓글을 반환합니다. */
+    @Override
+    public List<CommunityPost.CommunityComment> comments(Long postSeq, String userId) {
+        if (mapper.canReadPost(postSeq, userId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
+        }
+        return mapper.selectComments(postSeq);
     }
 
     /** 게시물과 업로드된 미디어를 트랜잭션으로 저장합니다. */

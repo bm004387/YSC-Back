@@ -7,6 +7,7 @@ public record CommunityPost(
         Long postSeq,
         String authorId,
         String authorName,
+        Long profileImageFilSeq,
         String content,
         String createdAt,
         long likeCount,
@@ -21,5 +22,16 @@ public record CommunityPost(
             Long filSeq,
             String mediaType,
             String contentType
+    ) {}
+
+    /** 게시물 댓글 응답 정보입니다. */
+    public record CommunityComment(
+            Long cmtSeq,
+            Long parentCmtSeq,
+            String usrId,
+            String usrNm,
+            Long profileImageFilSeq,
+            String cmtCn,
+            String cmtDtm
     ) {}
 }

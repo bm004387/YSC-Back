@@ -57,6 +57,14 @@ public class CommunityController {
         return service.feed(session(request).usrId(), type, limit);
     }
 
+    /** 게시물의 댓글 목록을 반환합니다. */
+    @GetMapping("/posts/{postSeq}/comments")
+    public List<CommunityPost.CommunityComment> comments(
+            HttpServletRequest request,
+            @PathVariable Long postSeq) {
+        return service.comments(postSeq, session(request).usrId());
+    }
+
     /** 본문과 첨부 파일을 새 게시물로 등록합니다. */
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Long> create(

@@ -12,6 +12,7 @@ public class CommunityPostRowVO extends CommonVO {
     private Long postSeq;
     private String authorId;
     private String authorName;
+    private Long profileImageFilSeq;
     private String content;
     private String createdAt;
     private long likeCount;

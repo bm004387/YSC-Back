@@ -34,6 +34,12 @@ public interface CommunityMapper {
     /** 게시물에 연결된 미디어 정보를 조회합니다. */
     List<CommunityPost.CommunityMedia> selectMedia(@Param("postSeq") Long postSeq);
 
+    /** 게시물 조회 권한을 확인합니다. */
+    int canReadPost(@Param("postSeq") Long postSeq, @Param("usrId") String usrId);
+
+    /** 활성 댓글을 시간순으로 조회합니다. */
+    List<CommunityPost.CommunityComment> selectComments(@Param("postSeq") Long postSeq);
+
     /** 사용자별 게시물 조회 기록을 저장합니다. */
     int markSeen(@Param("command") CommunityPostCommandVO command);
 

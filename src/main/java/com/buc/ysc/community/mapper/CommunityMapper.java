@@ -40,6 +40,9 @@ public interface CommunityMapper {
     /** 활성 댓글을 시간순으로 조회합니다. */
     List<CommunityPost.CommunityComment> selectComments(@Param("postSeq") Long postSeq);
 
+    /** 댓글 내용을 새로 저장합니다. */
+    int insertComment(@Param("command") CommunityPostCommandVO command);
+
     /** 사용자별 게시물 조회 기록을 저장합니다. */
     int markSeen(@Param("command") CommunityPostCommandVO command);
 

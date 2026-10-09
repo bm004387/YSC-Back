@@ -192,6 +192,26 @@
         ORDER BY C.CMT_DTM, C.CMT_SEQ
     </select>
 
+    <!-- 게시물 댓글과 등록 시스템 컬럼을 저장합니다. -->
+    <insert id="insertComment">
+        INSERT INTO TB_COMM_CMT (
+            POST_SEQ
+            ,  USR_ID
+            ,  PARENT_CMT_SEQ
+            ,  CMT_CN
+            ,  CMT_STAT
+            ,  FRST_REG_USER_ID
+        )
+        VALUES (
+            #{command.postSeq}
+            ,  #{command.usrId}
+            ,  #{command.parentCmtSeq}
+            ,  #{command.commentContent}
+            ,  'ACTIVE'
+            ,  #{command.frstRegUserId}
+        )
+    </insert>
+
     <!-- 사용자가 게시물을 확인한 기록을 최초 1회 저장합니다. -->
     <insert id="markSeen">
         INSERT INTO TB_COMM_POST_SEEN (

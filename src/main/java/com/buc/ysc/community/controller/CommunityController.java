@@ -65,6 +65,20 @@ public class CommunityController {
         return service.comments(postSeq, session(request).usrId());
     }
 
+    /** 로그인 사용자의 댓글을 게시물에 등록합니다. */
+    @PostMapping("/posts/{postSeq}/comments")
+    public Map<String, Boolean> addComment(
+            HttpServletRequest request,
+            @PathVariable Long postSeq,
+            @RequestBody CommentRequest body) {
+        CommunityPostCommandVO command = commandFor(session(request));
+        command.setPostSeq(postSeq);
+        command.setCommentContent(body.content());
+        command.setParentCmtSeq(body.parentCmtSeq());
+        service.addComment(command);
+        return Map.of("success", true);
+    }
+
     /** 본문과 첨부 파일을 새 게시물로 등록합니다. */
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Map<String, Long> create(
@@ -156,5 +170,9 @@ public class CommunityController {
 
     /** 좋아요·저장 변경 요청 값입니다. */
     public record Toggle(boolean enabled) {
+    }
+
+    /** 댓글 등록 요청 값입니다. */
+    public record CommentRequest(String content, Long parentCmtSeq) {
     }
 }

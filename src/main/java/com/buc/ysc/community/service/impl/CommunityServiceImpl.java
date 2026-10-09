@@ -58,6 +58,20 @@ public class CommunityServiceImpl implements CommunityService {
         return mapper.selectComments(postSeq);
     }
 
+    /** 게시물 공개 권한과 내용을 확인한 뒤 댓글을 등록합니다. */
+    @Override
+    @Transactional
+    public void addComment(CommunityPostCommandVO command) {
+        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
+        }
+        if (command.getCommentContent() == null || command.getCommentContent().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 내용을 입력해 주세요.");
+        }
+        command.setCommentContent(command.getCommentContent().trim());
+        mapper.insertComment(command);
+    }
+
     /** 게시물과 업로드된 미디어를 트랜잭션으로 저장합니다. */
     @Override
     @Transactional

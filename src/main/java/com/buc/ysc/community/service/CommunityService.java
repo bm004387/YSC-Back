@@ -13,6 +13,9 @@ public interface CommunityService {
     /** 사용자가 볼 수 있는 게시물의 댓글을 조회합니다. */
     List<CommunityPost.CommunityComment> comments(Long postSeq, String userId);
 
+    /** 게시물에 새 댓글을 등록합니다. */
+    void addComment(CommunityPostCommandVO command);
+
     /** 게시물과 첨부 파일을 저장합니다. */
     Long create(CommunityPostCommandVO command);
 

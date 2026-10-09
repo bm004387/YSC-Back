@@ -14,7 +14,9 @@ public class CommunityPostCommandVO extends CommonVO {
     private Long postSeq;
     private String usrId;
     private String content;
+    private String commentContent;
     private String visibility;
     private Boolean enabled;
+    private Long parentCmtSeq;
     private List<MultipartFile> files;
 }

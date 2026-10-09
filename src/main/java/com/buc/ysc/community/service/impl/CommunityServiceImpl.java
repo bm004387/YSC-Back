@@ -88,6 +88,10 @@ public class CommunityServiceImpl implements CommunityService {
         if (command.getCommentContent() == null || command.getCommentContent().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "댓글 내용을 입력해 주세요.");
         }
+        if (command.getParentCmtSeq() != null
+                && mapper.countActiveComment(command.getPostSeq(), command.getParentCmtSeq()) == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "답글을 달 댓글을 찾을 수 없습니다.");
+        }
         command.setCommentContent(command.getCommentContent().trim());
         mapper.insertComment(command);
     }

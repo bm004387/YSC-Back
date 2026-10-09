@@ -50,6 +50,11 @@ public interface CommunityMapper {
     /** 활성 댓글을 시간순으로 조회합니다. */
     List<CommunityPost.CommunityComment> selectComments(@Param("postSeq") Long postSeq);
 
+    /** 게시물에 속한 활성 부모 댓글인지 확인합니다. */
+    int countActiveComment(
+            @Param("postSeq") Long postSeq,
+            @Param("cmtSeq") Long cmtSeq);
+
     /** 댓글 내용을 새로 저장합니다. */
     int insertComment(@Param("command") CommunityPostCommandVO command);
 

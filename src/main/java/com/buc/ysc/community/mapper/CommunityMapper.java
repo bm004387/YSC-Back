@@ -14,18 +14,26 @@ import org.apache.ibatis.annotations.Param;
 public interface CommunityMapper {
 
     /** 내 게시물·팔로워·팔로잉 수를 조회합니다. */
-    CommunityProfileSummaryVO selectProfileSummary(@Param("usrId") String usrId);
+    CommunityProfileSummaryVO selectProfileSummary(
+            @Param("usrId") String usrId,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted);
 
     /** 사용자 프로필과 로그인 사용자의 팔로우 상태를 조회합니다. */
     CommunityUserProfileVO selectUserProfile(
             @Param("usrId") String usrId,
-            @Param("viewerUsrId") String viewerUsrId);
+            @Param("viewerUsrId") String viewerUsrId,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted);
 
     /** 팔로우 대상 사용자가 존재하는지 확인합니다. */
     int countUser(@Param("usrId") String usrId);
 
     /** 사용자의 게시물 피드에 팔로우 사용자 조건을 전달합니다. */
-    int followUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
+    int followUser(
+            @Param("usrId") String usrId,
+            @Param("followingUsrId") String followingUsrId,
+            @Param("followStat") String followStat);
 
     /** 팔로우 관계를 해제합니다. */
     int unfollowUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
@@ -40,24 +48,33 @@ public interface CommunityMapper {
             @Param("usrId") String usrId,
             @Param("query") String query,
             @Param("userFilter") String userFilter,
-            @Param("limit") int limit);
+            @Param("limit") int limit,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted);
 
     /** 로그인 사용자의 팔로워 또는 팔로잉 목록을 조회합니다. */
     List<CommunityUserSearchVO> selectFollowUsers(
             @Param("usrId") String usrId,
             @Param("relationType") String relationType,
-            @Param("limit") int limit);
+            @Param("limit") int limit,
+            @Param("followAccepted") String followAccepted);
 
     /** 공개 범위에 맞는 게시물 중 본문 검색 결과를 조회합니다. */
     List<CommunityPostRowVO> searchPosts(
             @Param("usrId") String usrId,
             @Param("query") String query,
-            @Param("limit") int limit);
+            @Param("limit") int limit,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted,
+            @Param("publicVisibility") String publicVisibility);
 
     /** 여러 게시물 각각의 최신 댓글을 두 건까지 조회합니다. */
     List<CommunityCommentPreviewVO> selectCommentPreviews(
             @Param("usrId") String usrId,
-            @Param("postSeqs") List<Long> postSeqs);
+            @Param("postSeqs") List<Long> postSeqs,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted,
+            @Param("publicVisibility") String publicVisibility);
 
     /** 게시물 일련번호를 생성합니다. */
     Long nextPostSeq();
@@ -65,7 +82,8 @@ public interface CommunityMapper {
     /** 게시물 본문을 저장합니다. */
     int insertPost(
             @Param("postSeq") Long postSeq,
-            @Param("command") CommunityPostCommandVO command);
+            @Param("command") CommunityPostCommandVO command,
+            @Param("postStat") String postStat);
 
     /** 게시물과 파일의 연결 정보를 저장합니다. */
     int insertPostFile(
@@ -80,13 +98,21 @@ public interface CommunityMapper {
             @Param("usrId") String usrId,
             @Param("feedType") String feedType,
             @Param("limit") int limit,
-            @Param("profileUsrId") String profileUsrId);
+            @Param("profileUsrId") String profileUsrId,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted,
+            @Param("publicVisibility") String publicVisibility);
 
     /** 게시물에 연결된 미디어 정보를 조회합니다. */
     List<CommunityPost.CommunityMedia> selectMedia(@Param("postSeq") Long postSeq);
 
     /** 게시물 조회 권한을 확인합니다. */
-    int canReadPost(@Param("postSeq") Long postSeq, @Param("usrId") String usrId);
+    int canReadPost(
+            @Param("postSeq") Long postSeq,
+            @Param("usrId") String usrId,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted,
+            @Param("publicVisibility") String publicVisibility);
 
     /** 활성 댓글을 시간순으로 조회합니다. */
     List<CommunityPost.CommunityComment> selectComments(@Param("postSeq") Long postSeq);
@@ -121,5 +147,10 @@ public interface CommunityMapper {
     int removeSave(@Param("command") CommunityPostCommandVO command);
 
     /** 사용자가 첨부 파일을 조회할 수 있는지 검사합니다. */
-    int canReadFile(@Param("filSeq") Long filSeq, @Param("usrId") String usrId);
+    int canReadFile(
+            @Param("filSeq") Long filSeq,
+            @Param("usrId") String usrId,
+            @Param("postActive") String postActive,
+            @Param("followAccepted") String followAccepted,
+            @Param("publicVisibility") String publicVisibility);
 }

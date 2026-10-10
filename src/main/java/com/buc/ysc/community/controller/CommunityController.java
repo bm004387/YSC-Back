@@ -8,6 +8,7 @@ import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import com.buc.ysc.community.vo.CommunityUserSearchVO;
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.security.SessionManager;
@@ -41,16 +42,19 @@ public class CommunityController {
     private final SessionManager sessions;
     private final CommunityMapper mapper;
     private final FileStorageService fileStorage;
+    private final CommonCodeUtil commonCodeUtil;
 
     public CommunityController(
             CommunityService service,
             SessionManager sessions,
             CommunityMapper mapper,
-            FileStorageService fileStorage) {
+            FileStorageService fileStorage,
+            CommonCodeUtil commonCodeUtil) {
         this.service = service;
         this.sessions = sessions;
         this.mapper = mapper;
         this.fileStorage = fileStorage;
+        this.commonCodeUtil = commonCodeUtil;
     }
 
     /** 선택한 피드 종류의 게시물을 조회합니다. */
@@ -196,8 +200,16 @@ public class CommunityController {
             HttpServletRequest request,
             @RequestPart("content") String content,
             @RequestPart(value = "visibility", required = false) String visibility,
+            @RequestPart(value = "filTyp", required = false) String requestedFileType,
+            @RequestPart(value = "filCd", required = false) String requestedFileCode,
             @RequestPart(value = "files", required = false) List<MultipartFile> files) {
         UserSession session = session(request);
+        validateFileClassification(
+                requestedFileType,
+                commonCodeUtil.getCodeName("FIL_TYP", "003"));
+        validateFileClassification(
+                requestedFileCode,
+                commonCodeUtil.getCodeName("FIL_CD", "001"));
         CommunityPostCommandVO command = commandFor(session);
         command.setContent(content);
         command.setVisibility(visibility);
@@ -248,7 +260,12 @@ public class CommunityController {
             HttpServletRequest request,
             @PathVariable Long filSeq) {
         UserSession user = session(request);
-        if (mapper.canReadFile(filSeq, user.usrId()) == 0) {
+        if (mapper.canReadFile(
+                filSeq,
+                user.usrId(),
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                commonCodeUtil.getCodeName("VIS_TYP", "001")) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "파일을 찾을 수 없습니다.");
         }
         StoredFile file = fileStorage.metadata(filSeq);
@@ -277,6 +294,12 @@ public class CommunityController {
         command.setUsrId(session.usrId());
         command.setSystemUserId(session.usrId());
         return command;
+    }
+
+    private void validateFileClassification(String requestedCode, String expectedCode) {
+        if (requestedCode != null && !requestedCode.equals(expectedCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 분류 코드가 올바르지 않습니다.");
+        }
     }
 
     /** 좋아요·저장 변경 요청 값입니다. */

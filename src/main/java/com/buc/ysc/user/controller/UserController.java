@@ -2,6 +2,7 @@ package com.buc.ysc.user.controller;
 
 import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.security.UserSession;
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.user.mapper.UserMapper;
@@ -34,14 +35,17 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
     private final FileStorageService fileStorageService;
     private final MsgUtil msgUtil;
+    private final CommonCodeUtil commonCodeUtil;
 
     public UserController(UserMapper userMapper, SessionManager sessionManager, PasswordEncoder passwordEncoder,
-                          FileStorageService fileStorageService, MsgUtil msgUtil) {
+                          FileStorageService fileStorageService, MsgUtil msgUtil,
+                          CommonCodeUtil commonCodeUtil) {
         this.userMapper = userMapper;
         this.sessionManager = sessionManager;
         this.passwordEncoder = passwordEncoder;
         this.fileStorageService = fileStorageService;
         this.msgUtil = msgUtil;
+        this.commonCodeUtil = commonCodeUtil;
     }
 
     @GetMapping("/me")
@@ -125,19 +129,34 @@ public class UserController {
 
     @PutMapping(value = "/me/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Transactional
-    public ResponseEntity<?> saveProfileImage(HttpServletRequest request, @RequestPart("file") MultipartFile file) {
+    public ResponseEntity<?> saveProfileImage(
+            HttpServletRequest request,
+            @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "filTyp", required = false) String requestedFileType,
+            @RequestPart(value = "filCd", required = false) String requestedFileCode) {
         String token = tokenFrom(request);
         UserSession session = requireSession(token);
+        String fileType = commonCodeUtil.getCodeName("FIL_TYP", "002");
+        String fileCode = commonCodeUtil.getCodeName("FIL_CD", "002");
+        validateFileClassification(requestedFileType, fileType);
+        validateFileClassification(requestedFileCode, fileCode);
         String contentType = file.getContentType();
         if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, msgUtil.getMsg("MYINFO", "011"));
+        }
+        try {
+            commonCodeUtil.getCodeNameByValue("CONT_TYP", contentType.toLowerCase());
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    msgUtil.getMsg("MYINFO", "011"),
+                    exception);
         }
         UserVO user = userMapper.selectByUsrId(session.usrId());
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, msgUtil.getMsg("MYINFO", "010"));
         }
-        // FIL_CD 2: 프로필 사진. 실제 저장 경로는 {FILE_STORAGE_ROOT}/2 입니다.
-        Long newFileSeq = fileStorageService.store(file, "USER", "2", session.usrId());
+        Long newFileSeq = fileStorageService.store(file, fileType, fileCode, session.usrId());
         UserVO update = new UserVO();
         update.setUsrId(session.usrId());
         update.setPrflImgFilSeq(newFileSeq);
@@ -181,6 +200,12 @@ public class UserController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("MYINFO", "009"));
         }
         return authorization.substring(7);
+    }
+
+    private void validateFileClassification(String requestedCode, String expectedCode) {
+        if (requestedCode != null && !requestedCode.equals(expectedCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "파일 분류 코드가 올바르지 않습니다.");
+        }
     }
 
     private String valueOrDatabase(String sessionValue, String databaseValue) {

@@ -20,6 +20,7 @@ import com.buc.ysc.auth.vo.record.RecoveryPasswordVerifyRequest;
 import com.buc.ysc.auth.vo.record.PasswordResetRequest;
 import com.buc.ysc.auth.vo.response.RecoveryIdResponse;
 import com.buc.ysc.auth.service.SmsService;
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.util.MsgUtil;
 import org.springframework.http.HttpStatus;
@@ -36,17 +37,20 @@ public class AuthServiceImpl implements AuthService {
     private final MsgUtil msgUtil;
     private final PinLoginThrottle pinLoginThrottle;
     private final SmsService smsService;
+    private final CommonCodeUtil commonCodeUtil;
 
 
     public AuthServiceImpl(UserMapper userMapper, PasswordEncoder passwordEncoder,
                            SessionManager sessionManager, MsgUtil msgUtil,
-                           PinLoginThrottle pinLoginThrottle, SmsService smsService) {
+                           PinLoginThrottle pinLoginThrottle, SmsService smsService,
+                           CommonCodeUtil commonCodeUtil) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.sessionManager = sessionManager;
         this.msgUtil = msgUtil;
         this.pinLoginThrottle = pinLoginThrottle;
         this.smsService = smsService;
+        this.commonCodeUtil = commonCodeUtil;
     }
 
 
@@ -67,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
         // 입력받은 비밀번호를 Bcrypt로 암호화
         user.setPwd(passwordEncoder.encode(request.pwd()));
         user.setUsrNm(request.usrNm());
-        user.setRol("USER");
+        user.setRol(commonCodeUtil.getCodeName("ROL", "001"));
         user.setHpNo(request.hpNo());
         user.setAdr(request.adr());
         user.setDtlAdr(request.dtlAdr());

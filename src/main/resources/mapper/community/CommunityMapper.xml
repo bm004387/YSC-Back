@@ -9,19 +9,19 @@
                    SELECT COUNT(*)
                    FROM TB_COMM_POST P
                    WHERE P.USR_ID = #{usrId}
-                     AND P.POST_STAT = 'ACTIVE'
+                     AND P.POST_STAT = #{postActive}
                ) AS postCount
             ,  (
                    SELECT COUNT(*)
                    FROM TB_COMM_FOLLOW F
                    WHERE F.FOLLOWING_USR_ID = #{usrId}
-                     AND F.FOLLOW_STAT = 'ACCEPTED'
+                     AND F.FOLLOW_STAT = #{followAccepted}
                ) AS followerCount
             ,  (
                    SELECT COUNT(*)
                    FROM TB_COMM_FOLLOW F
                    WHERE F.FOLLOWER_USR_ID = #{usrId}
-                     AND F.FOLLOW_STAT = 'ACCEPTED'
+                     AND F.FOLLOW_STAT = #{followAccepted}
                ) AS followingCount
     </select>
 
@@ -30,15 +30,15 @@
         SELECT U.USR_ID AS usrId
              , U.USR_NM AS usrNm
              , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
-             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = 'ACTIVE') AS postCount
-             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWING_USR_ID = U.USR_ID AND F.FOLLOW_STAT = 'ACCEPTED') AS followerCount
-             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID = U.USR_ID AND F.FOLLOW_STAT = 'ACCEPTED') AS followingCount
+             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = #{postActive}) AS postCount
+             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWING_USR_ID = U.USR_ID AND F.FOLLOW_STAT = #{followAccepted}) AS followerCount
+             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID = U.USR_ID AND F.FOLLOW_STAT = #{followAccepted}) AS followingCount
              , EXISTS (
                    SELECT 1
                    FROM TB_COMM_FOLLOW F
                    WHERE F.FOLLOWER_USR_ID = #{viewerUsrId}
                      AND F.FOLLOWING_USR_ID = U.USR_ID
-                     AND F.FOLLOW_STAT = 'ACCEPTED'
+                     AND F.FOLLOW_STAT = #{followAccepted}
                ) AS following
         FROM TB_USR U
         WHERE U.USR_ID = #{usrId}
@@ -62,7 +62,7 @@
         VALUES (
             #{usrId},
             #{followingUsrId},
-            'ACCEPTED',
+            #{followStat},
             #{usrId}
         )
         ON CONFLICT (FOLLOWER_USR_ID, FOLLOWING_USR_ID)
@@ -89,13 +89,13 @@
         SELECT U.USR_ID AS usrId
              , U.USR_NM AS usrNm
              , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
-             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = 'ACTIVE') AS postCount
+             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = #{postActive}) AS postCount
              , EXISTS (
                    SELECT 1
                    FROM TB_COMM_FOLLOW F
                    WHERE F.FOLLOWER_USR_ID = #{usrId}
                      AND F.FOLLOWING_USR_ID = U.USR_ID
-                     AND F.FOLLOW_STAT = 'ACCEPTED'
+                     AND F.FOLLOW_STAT = #{followAccepted}
                ) AS following
         FROM TB_USR U
         WHERE U.USR_ID &lt;&gt; #{usrId}
@@ -112,7 +112,7 @@
                       FROM TB_COMM_FOLLOW F
                       WHERE F.FOLLOWER_USR_ID = #{usrId}
                         AND F.FOLLOWING_USR_ID = U.USR_ID
-                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                        AND F.FOLLOW_STAT = #{followAccepted}
                   )
               )
               OR (
@@ -122,7 +122,7 @@
                       FROM TB_COMM_FOLLOW F
                       WHERE F.FOLLOWING_USR_ID = #{usrId}
                         AND F.FOLLOWER_USR_ID = U.USR_ID
-                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                        AND F.FOLLOW_STAT = #{followAccepted}
                   )
               )
           )
@@ -139,14 +139,14 @@
                    SELECT COUNT(*)
                    FROM TB_COMM_POST P
                    WHERE P.USR_ID = U.USR_ID
-                     AND P.POST_STAT = 'ACTIVE'
+                     AND P.POST_STAT = #{postActive}
                ) AS postCount
              , EXISTS (
                    SELECT 1
                    FROM TB_COMM_FOLLOW F2
                    WHERE F2.FOLLOWER_USR_ID = #{usrId}
                      AND F2.FOLLOWING_USR_ID = U.USR_ID
-                     AND F2.FOLLOW_STAT = 'ACCEPTED'
+                     AND F2.FOLLOW_STAT = #{followAccepted}
                ) AS following
         FROM TB_COMM_FOLLOW F
         JOIN TB_USR U
@@ -154,7 +154,7 @@
                             WHEN #{relationType} = 'followers' THEN F.FOLLOWER_USR_ID
                             ELSE F.FOLLOWING_USR_ID
                         END
-        WHERE F.FOLLOW_STAT = 'ACCEPTED'
+        WHERE F.FOLLOW_STAT = #{followAccepted}
           AND (
               (#{relationType} = 'followers' AND F.FOLLOWING_USR_ID = #{usrId})
               OR (#{relationType} = 'following' AND F.FOLLOWER_USR_ID = #{usrId})
@@ -187,7 +187,7 @@
                ) AS savedByMe
         FROM TB_COMM_POST P
         JOIN TB_USR U ON U.USR_ID = P.USR_ID
-        WHERE P.POST_STAT = 'ACTIVE'
+        WHERE P.POST_STAT = #{postActive}
           AND (
               COALESCE(P.POST_TTL, '') ILIKE '%' || #{query} || '%'
               OR P.POST_CN ILIKE '%' || #{query} || '%'
@@ -195,14 +195,14 @@
               OR U.USR_NM ILIKE '%' || #{query} || '%'
           )
           AND (
-              P.VIS_TYP = 'PUBLIC'
+              P.VIS_TYP = #{publicVisibility}
               OR P.USR_ID = #{usrId}
               OR EXISTS (
                   SELECT 1
                   FROM TB_COMM_FOLLOW F
                   WHERE F.FOLLOWER_USR_ID = #{usrId}
                     AND F.FOLLOWING_USR_ID = P.USR_ID
-                    AND F.FOLLOW_STAT = 'ACCEPTED'
+                    AND F.FOLLOW_STAT = #{followAccepted}
               )
           )
         ORDER BY P.POST_DTM DESC
@@ -231,7 +231,7 @@
             #{command.usrId},
             NULL,
             #{command.content},
-            'ACTIVE',
+            #{postStat},
             #{command.visibility},
             CURRENT_TIMESTAMP,
             #{command.frstRegUserId}
@@ -290,21 +290,21 @@
             ) AS savedByMe
         FROM TB_COMM_POST P
         JOIN TB_USR U ON U.USR_ID = P.USR_ID
-        WHERE P.POST_STAT = 'ACTIVE'
+        WHERE P.POST_STAT = #{postActive}
           AND (
               (#{feedType} = 'mine' AND P.USR_ID = #{usrId})
               OR (
                   #{feedType} = 'profile'
                   AND P.USR_ID = #{profileUsrId}
                   AND (
-                      P.VIS_TYP = 'PUBLIC'
+                      P.VIS_TYP = #{publicVisibility}
                       OR P.USR_ID = #{usrId}
                       OR EXISTS (
                           SELECT 1
                           FROM TB_COMM_FOLLOW F
                           WHERE F.FOLLOWER_USR_ID = #{usrId}
                             AND F.FOLLOWING_USR_ID = P.USR_ID
-                            AND F.FOLLOW_STAT = 'ACCEPTED'
+                            AND F.FOLLOW_STAT = #{followAccepted}
                       )
                   )
               )
@@ -317,28 +317,28 @@
                         AND S.USR_ID = #{usrId}
                   )
                   AND (
-                      P.VIS_TYP = 'PUBLIC'
+                      P.VIS_TYP = #{publicVisibility}
                       OR P.USR_ID = #{usrId}
                       OR EXISTS (
                           SELECT 1
                           FROM TB_COMM_FOLLOW F
                           WHERE F.FOLLOWER_USR_ID = #{usrId}
                             AND F.FOLLOWING_USR_ID = P.USR_ID
-                            AND F.FOLLOW_STAT = 'ACCEPTED'
+                            AND F.FOLLOW_STAT = #{followAccepted}
                       )
                   )
               )
               OR (
                   #{feedType} NOT IN ('mine', 'saved', 'profile')
                   AND (
-                      P.VIS_TYP = 'PUBLIC'
+                      P.VIS_TYP = #{publicVisibility}
                       OR P.USR_ID = #{usrId}
                       OR EXISTS (
                           SELECT 1
                           FROM TB_COMM_FOLLOW F
                           WHERE F.FOLLOWER_USR_ID = #{usrId}
                             AND F.FOLLOWING_USR_ID = P.USR_ID
-                            AND F.FOLLOW_STAT = 'ACCEPTED'
+                            AND F.FOLLOW_STAT = #{followAccepted}
                       )
                   )
               )
@@ -359,7 +359,7 @@
                   FROM TB_COMM_FOLLOW F
                   WHERE F.FOLLOWER_USR_ID = #{usrId}
                     AND F.FOLLOWING_USR_ID = P.USR_ID
-                    AND F.FOLLOW_STAT = 'ACCEPTED'
+                    AND F.FOLLOW_STAT = #{followAccepted}
               )
           )
         ORDER BY
@@ -370,7 +370,7 @@
                     FROM TB_COMM_FOLLOW F
                     WHERE F.FOLLOWER_USR_ID = #{usrId}
                       AND F.FOLLOWING_USR_ID = P.USR_ID
-                      AND F.FOLLOW_STAT = 'ACCEPTED'
+                      AND F.FOLLOW_STAT = #{followAccepted}
                 ) THEN 0
                 ELSE 1
             END,
@@ -403,16 +403,16 @@
         SELECT COUNT(*)
         FROM TB_COMM_POST P
         WHERE P.POST_SEQ = #{postSeq}
-          AND P.POST_STAT = 'ACTIVE'
+          AND P.POST_STAT = #{postActive}
           AND (
-              P.VIS_TYP = 'PUBLIC'
+              P.VIS_TYP = #{publicVisibility}
               OR P.USR_ID = #{usrId}
               OR EXISTS (
                   SELECT 1
                   FROM TB_COMM_FOLLOW F
                   WHERE F.FOLLOWER_USR_ID = #{usrId}
                     AND F.FOLLOWING_USR_ID = P.USR_ID
-                    AND F.FOLLOW_STAT = 'ACCEPTED'
+                    AND F.FOLLOW_STAT = #{followAccepted}
               )
           )
     </select>
@@ -464,21 +464,21 @@
             JOIN TB_USR U ON U.USR_ID = C.USR_ID
             JOIN TB_COMM_POST P ON P.POST_SEQ = C.POST_SEQ
             WHERE C.CMT_STAT = 'ACTIVE'
-              AND P.POST_STAT = 'ACTIVE'
+              AND P.POST_STAT = #{postActive}
               AND P.POST_SEQ IN
               <foreach collection="postSeqs" item="postSeq" open="(" separator="," close=")">
                   #{postSeq}
               </foreach>
               AND C.PARENT_CMT_SEQ IS NULL
               AND (
-                  P.VIS_TYP = 'PUBLIC'
+                  P.VIS_TYP = #{publicVisibility}
                   OR P.USR_ID = #{usrId}
                   OR EXISTS (
                       SELECT 1
                       FROM TB_COMM_FOLLOW F
                       WHERE F.FOLLOWER_USR_ID = #{usrId}
                         AND F.FOLLOWING_USR_ID = P.USR_ID
-                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                        AND F.FOLLOW_STAT = #{followAccepted}
                   )
               )
         )
@@ -611,16 +611,16 @@
                    FROM TB_COMM_POST_FILE PF
                    JOIN TB_COMM_POST P ON P.POST_SEQ = PF.POST_SEQ
                    WHERE PF.FIL_SEQ = #{filSeq}
-                     AND P.POST_STAT = 'ACTIVE'
+                     AND P.POST_STAT = #{postActive}
                      AND (
-                         P.VIS_TYP = 'PUBLIC'
+                         P.VIS_TYP = #{publicVisibility}
                          OR P.USR_ID = #{usrId}
                          OR EXISTS (
                              SELECT 1
                              FROM TB_COMM_FOLLOW F
                              WHERE F.FOLLOWER_USR_ID = #{usrId}
                                AND F.FOLLOWING_USR_ID = P.USR_ID
-                               AND F.FOLLOW_STAT = 'ACCEPTED'
+                               AND F.FOLLOW_STAT = #{followAccepted}
                          )
                      )
                )

@@ -11,7 +11,7 @@
           JOIN ysc.pgm_mng p
             ON p.pgm_cd = m.pgm_cd
          WHERE m.menu_lvl = 1
-           AND m.menu_typ = 'TAB'
+           AND m.menu_typ = #{menuType}
            AND m.use_yn = 'Y'
            AND p.use_yn = 'Y'
          ORDER BY m.sort_ord, m.menu_id

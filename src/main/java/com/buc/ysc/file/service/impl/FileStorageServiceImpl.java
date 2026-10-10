@@ -1,6 +1,7 @@
 package com.buc.ysc.file.service.impl;
 
 import com.buc.ysc.file.mapper.FileMapper;
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.util.MsgUtil;
@@ -30,12 +31,15 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     private final FileMapper fileMapper;
     private final MsgUtil msgUtil;
+    private final CommonCodeUtil commonCodeUtil;
     private final Path storageRoot;
 
     public FileStorageServiceImpl(FileMapper fileMapper, MsgUtil msgUtil,
+                                  CommonCodeUtil commonCodeUtil,
                                   @Value("${file.storage.root:./uploads}") String storageRoot) {
         this.fileMapper = fileMapper;
         this.msgUtil = msgUtil;
+        this.commonCodeUtil = commonCodeUtil;
         this.storageRoot = Path.of(storageRoot).toAbsolutePath().normalize();
     }
 
@@ -168,7 +172,7 @@ public class FileStorageServiceImpl implements FileStorageService {
     private String directoryCodeFor(String fileCode) {
         if (fileCode != null && fileCode.matches("[0-9]{1,20}")) return fileCode;
         // 이전 배포의 프로필 코드를 새 디렉터리 코드에 연결합니다.
-        if ("PROFILE".equalsIgnoreCase(fileCode)) return "2";
+        if ("PROFILE".equalsIgnoreCase(fileCode)) return commonCodeUtil.getCodeName("FIL_CD", "002");
         return null;
     }
 
@@ -204,6 +208,13 @@ public class FileStorageServiceImpl implements FileStorageService {
     }
 
     private String safeContentType(String contentType) {
-        return contentType == null || contentType.isBlank() ? "application/octet-stream" : contentType;
+        String value = contentType == null || contentType.isBlank()
+                ? "application/octet-stream"
+                : contentType;
+        try {
+            return commonCodeUtil.getCodeNameByValue("CONT_TYP", value);
+        } catch (IllegalArgumentException exception) {
+            return commonCodeUtil.getCodeNameByValue("CONT_TYP", "application/octet-stream");
+        }
     }
 }

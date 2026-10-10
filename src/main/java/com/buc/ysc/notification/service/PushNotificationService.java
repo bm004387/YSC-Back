@@ -1,5 +1,6 @@
 package com.buc.ysc.notification.service;
 
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.notification.mapper.PushTokenMapper;
 import com.buc.ysc.common.util.PushNotificationUtil;
 import com.buc.ysc.util.MsgUtil;
@@ -15,20 +16,25 @@ public class PushNotificationService {
     private final PushTokenMapper mapper;
     private final MsgUtil messages;
     private final PushNotificationUtil pushNotificationUtil;
+    private final CommonCodeUtil commonCodeUtil;
 
     public PushNotificationService(
             PushTokenMapper mapper,
             MsgUtil messages,
-            PushNotificationUtil pushNotificationUtil) {
+            PushNotificationUtil pushNotificationUtil,
+            CommonCodeUtil commonCodeUtil) {
         this.mapper = mapper;
         this.messages = messages;
         this.pushNotificationUtil = pushNotificationUtil;
+        this.commonCodeUtil = commonCodeUtil;
     }
 
     /** 로그인 사용자의 기기 토큰을 등록합니다. */
     @Transactional
     public void registerToken(String usrId, String token, String platform) {
-        mapper.upsertToken(usrId, token, platform.toUpperCase(Locale.ROOT));
+        String normalizedPlatform = platform.toUpperCase(Locale.ROOT);
+        String detailCode = commonCodeUtil.getDetailCode("PLATFORM", normalizedPlatform);
+        mapper.upsertToken(usrId, token, commonCodeUtil.getCodeName("PLATFORM", detailCode));
     }
 
     /** 로그아웃한 기기의 푸시 토큰을 현재 계정에서 제거합니다. */

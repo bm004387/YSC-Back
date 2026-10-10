@@ -76,7 +76,7 @@
                    , #{adr}
                    , #{dtlAdr}
                    , CURRENT_TIMESTAMP
-                   , 'USER'
+                   , #{rol}
                    , #{frstRegUserId}
                    , TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
                    , #{lastModUserId}

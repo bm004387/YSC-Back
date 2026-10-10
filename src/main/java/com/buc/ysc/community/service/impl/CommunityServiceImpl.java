@@ -1,6 +1,7 @@
 package com.buc.ysc.community.service.impl;
 
 import com.buc.ysc.community.mapper.CommunityMapper;
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.community.service.CommunityService;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
@@ -14,6 +15,7 @@ import com.buc.ysc.notification.NewFollowerEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,26 +29,36 @@ public class CommunityServiceImpl implements CommunityService {
     private final CommunityMapper mapper;
     private final FileStorageService fileStorage;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommonCodeUtil commonCodeUtil;
 
     public CommunityServiceImpl(
             CommunityMapper mapper,
             FileStorageService fileStorage,
-            ApplicationEventPublisher eventPublisher) {
+            ApplicationEventPublisher eventPublisher,
+            CommonCodeUtil commonCodeUtil) {
         this.mapper = mapper;
         this.fileStorage = fileStorage;
         this.eventPublisher = eventPublisher;
+        this.commonCodeUtil = commonCodeUtil;
     }
 
     /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
     @Override
     public CommunityProfileSummaryVO profileSummary(String userId) {
-        return mapper.selectProfileSummary(userId);
+        return mapper.selectProfileSummary(
+                userId,
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
     }
 
     /** 대상 사용자 존재 여부를 확인하고 프로필 통계를 조회합니다. */
     @Override
     public CommunityUserProfileVO userProfile(String viewerUsrId, String profileUsrId) {
-        CommunityUserProfileVO profile = mapper.selectUserProfile(profileUsrId, viewerUsrId);
+        CommunityUserProfileVO profile = mapper.selectUserProfile(
+                profileUsrId,
+                viewerUsrId,
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
         if (profile == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
         }
@@ -59,7 +71,14 @@ public class CommunityServiceImpl implements CommunityService {
         if (mapper.countUser(profileUsrId) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
         }
-        return mapPosts(mapper.selectFeed(viewerUsrId, "profile", 50, profileUsrId));
+        return mapPosts(mapper.selectFeed(
+                viewerUsrId,
+                "profile",
+                50,
+                profileUsrId,
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                commonCodeUtil.getCodeName("VIS_TYP", "001")));
     }
 
     /** 자기 자신 팔로우를 차단하고 팔로우 상태를 변경합니다. */
@@ -73,7 +92,10 @@ public class CommunityServiceImpl implements CommunityService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
         }
         if (enabled) {
-            int changed = mapper.followUser(usrId, followingUsrId);
+            int changed = mapper.followUser(
+                    usrId,
+                    followingUsrId,
+                    commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
             if (changed > 0) {
                 eventPublisher.publishEvent(
                         new NewFollowerEvent(followingUsrId, usrId, usrNm));
@@ -100,7 +122,10 @@ public class CommunityServiceImpl implements CommunityService {
         return mapPosts(mapper.searchPosts(
                 usrId,
                 keyword,
-                Math.max(1, Math.min(limit, 50))));
+                Math.max(1, Math.min(limit, 50)),
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                commonCodeUtil.getCodeName("VIS_TYP", "001")));
     }
 
     /** 계정 테이블을 직접 검색하여 게시물이 없는 사용자도 반환합니다. */
@@ -118,7 +143,9 @@ public class CommunityServiceImpl implements CommunityService {
                 usrId,
                 keyword,
                 filter,
-                Math.max(1, Math.min(limit, 50)));
+                Math.max(1, Math.min(limit, 50)),
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
     }
 
     /** 관계 종류를 검증한 뒤 로그인 사용자의 목록만 조회합니다. */
@@ -127,7 +154,11 @@ public class CommunityServiceImpl implements CommunityService {
         if (!List.of("followers", "following").contains(relationType)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "팔로우 목록 종류가 올바르지 않습니다.");
         }
-        return mapper.selectFollowUsers(usrId, relationType, Math.max(1, Math.min(limit, 100)));
+        return mapper.selectFollowUsers(
+                usrId,
+                relationType,
+                Math.max(1, Math.min(limit, 100)),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
     }
 
     private String normalizeSearchQuery(String query) {
@@ -139,6 +170,23 @@ public class CommunityServiceImpl implements CommunityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검색어는 100자까지 입력할 수 있습니다.");
         }
         return keyword;
+    }
+
+    private int canReadPost(Long postSeq, String userId) {
+        Map<String, String> codes = postAccessCodes();
+        return mapper.canReadPost(
+                postSeq,
+                userId,
+                codes.get("postActive"),
+                codes.get("followAccepted"),
+                codes.get("publicVisibility"));
+    }
+
+    private Map<String, String> postAccessCodes() {
+        return Map.of(
+                "postActive", commonCodeUtil.getCodeName("POST_STAT", "001"),
+                "followAccepted", commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                "publicVisibility", commonCodeUtil.getCodeName("VIS_TYP", "001"));
     }
 
     private List<CommunityPost> mapPosts(List<CommunityPostRowVO> rows) {
@@ -160,7 +208,12 @@ public class CommunityServiceImpl implements CommunityService {
         if (postSeqs.size() > 50) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시물은 한 번에 50개까지 조회할 수 있습니다.");
         }
-        return mapper.selectCommentPreviews(userId, postSeqs.stream().distinct().toList());
+        return mapper.selectCommentPreviews(
+                userId,
+                postSeqs.stream().distinct().toList(),
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                commonCodeUtil.getCodeName("VIS_TYP", "001"));
     }
 
     /** 피드 결과에 첨부 파일 정보를 합쳐 반환합니다. */
@@ -170,14 +223,20 @@ public class CommunityServiceImpl implements CommunityService {
                 ? feedType
                 : "recommended";
         List<CommunityPostRowVO> rows = mapper.selectFeed(
-                userId, type, Math.max(1, Math.min(limit, 50)), userId);
+                userId,
+                type,
+                Math.max(1, Math.min(limit, 50)),
+                userId,
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
+                commonCodeUtil.getCodeName("FOLLOW_STAT", "001"),
+                commonCodeUtil.getCodeName("VIS_TYP", "001"));
         return mapPosts(rows);
     }
 
     /** 게시물 공개 권한을 검사한 뒤 활성 댓글을 반환합니다. */
     @Override
     public List<CommunityPost.CommunityComment> comments(Long postSeq, String userId) {
-        if (mapper.canReadPost(postSeq, userId) == 0) {
+        if (canReadPost(postSeq, userId) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
         }
         return mapper.selectComments(postSeq);
@@ -187,7 +246,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void addComment(CommunityPostCommandVO command) {
-        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+        if (canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
         }
         if (command.getCommentContent() == null || command.getCommentContent().isBlank()) {
@@ -205,7 +264,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void updateComment(CommunityPostCommandVO command) {
-        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+        if (canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
         }
         if (command.getCommentContent() == null || command.getCommentContent().isBlank()) {
@@ -221,7 +280,7 @@ public class CommunityServiceImpl implements CommunityService {
     @Override
     @Transactional
     public void deleteComment(CommunityPostCommandVO command) {
-        if (mapper.canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
+        if (canReadPost(command.getPostSeq(), command.getUsrId()) == 0) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "게시물을 찾을 수 없습니다.");
         }
         if (mapper.deleteComment(command) == 0) {
@@ -238,11 +297,15 @@ public class CommunityServiceImpl implements CommunityService {
         if (content == null || content.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "게시물 내용을 입력해 주세요.");
         }
-        String vis = "FOLLOWER".equalsIgnoreCase(command.getVisibility()) ? "FOLLOWER" : "PUBLIC";
+        String followerVisibility = commonCodeUtil.getCodeName("VIS_TYP", "002");
+        String publicVisibility = commonCodeUtil.getCodeName("VIS_TYP", "001");
+        String vis = followerVisibility.equalsIgnoreCase(command.getVisibility())
+                ? followerVisibility
+                : publicVisibility;
         Long seq = mapper.nextPostSeq();
         command.setContent(content.trim());
         command.setVisibility(vis);
-        mapper.insertPost(seq, command);
+        mapper.insertPost(seq, command, commonCodeUtil.getCodeName("POST_STAT", "001"));
         List<Long> stored = new ArrayList<>();
         try {
             int order = 1;
@@ -253,10 +316,31 @@ public class CommunityServiceImpl implements CommunityService {
                     continue;
                 }
                 String contentType = file.getContentType();
-                String type = contentType != null && contentType.toLowerCase().startsWith("video/")
-                        ? "VIDEO"
-                        : "IMAGE";
-                Long filSeq = fileStorage.store(file, "COMM", "1", userId);
+                String registeredContentType;
+                try {
+                    registeredContentType = commonCodeUtil.getCodeNameByValue(
+                            "CONT_TYP",
+                            contentType == null ? "" : contentType.toLowerCase());
+                } catch (IllegalArgumentException exception) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "등록되지 않은 파일 형식입니다.",
+                            exception);
+                }
+                if (!registeredContentType.startsWith("image/")
+                        && !registeredContentType.startsWith("video/")) {
+                    throw new ResponseStatusException(
+                            HttpStatus.BAD_REQUEST,
+                            "게시물에는 이미지 또는 동영상만 첨부할 수 있습니다.");
+                }
+                String videoType = commonCodeUtil.getCodeName("MEDIA_TYP", "002");
+                String imageType = commonCodeUtil.getCodeName("MEDIA_TYP", "001");
+                String type = registeredContentType.startsWith("video/")
+                        ? videoType
+                        : imageType;
+                String fileType = commonCodeUtil.getCodeName("FIL_TYP", "003");
+                String fileCode = commonCodeUtil.getCodeName("FIL_CD", "001");
+                Long filSeq = fileStorage.store(file, fileType, fileCode, userId);
                 stored.add(filSeq);
                 mapper.insertPostFile(seq, filSeq, order++, type, command);
             }

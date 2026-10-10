@@ -1,5 +1,6 @@
 package com.buc.ysc.common.menu;
 
+import com.buc.ysc.util.CommonCodeUtil;
 import com.buc.ysc.common.menu.mapper.MenuMapper;
 import com.buc.ysc.common.menu.vo.MenuVO;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +16,11 @@ import java.util.List;
 public class MenuController {
 
     private final MenuMapper menuMapper;
+    private final CommonCodeUtil commonCodeUtil;
 
     @GetMapping(value = "/bottom", produces = "application/json; charset=UTF-8")
     public List<MenuVO> getBottomMenuList() {
-        return menuMapper.getBottomMenuList();
+        return menuMapper.getBottomMenuList(commonCodeUtil.getCodeName("MENU_TYP", "002"));
     }
 
     @GetMapping(value = "/all", produces = "application/json; charset=UTF-8")

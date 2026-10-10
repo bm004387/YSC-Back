@@ -25,6 +25,57 @@
                ) AS followingCount
     </select>
 
+    <!-- 선택한 사용자의 프로필 통계와 현재 로그인 사용자의 팔로우 상태를 조회합니다. -->
+    <select id="selectUserProfile" resultType="com.buc.ysc.community.vo.CommunityUserProfileVO">
+        SELECT U.USR_ID AS usrId
+             , U.USR_NM AS usrNm
+             , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
+             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = 'ACTIVE') AS postCount
+             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWING_USR_ID = U.USR_ID AND F.FOLLOW_STAT = 'ACCEPTED') AS followerCount
+             , (SELECT COUNT(*) FROM TB_COMM_FOLLOW F WHERE F.FOLLOWER_USR_ID = U.USR_ID AND F.FOLLOW_STAT = 'ACCEPTED') AS followingCount
+             , EXISTS (
+                   SELECT 1
+                   FROM TB_COMM_FOLLOW F
+                   WHERE F.FOLLOWER_USR_ID = #{viewerUsrId}
+                     AND F.FOLLOWING_USR_ID = U.USR_ID
+                     AND F.FOLLOW_STAT = 'ACCEPTED'
+               ) AS following
+        FROM TB_USR U
+        WHERE U.USR_ID = #{usrId}
+    </select>
+
+    <!-- 팔로우 대상 계정이 존재하는지 확인합니다. -->
+    <select id="countUser" resultType="int">
+        SELECT COUNT(*)
+        FROM TB_USR
+        WHERE USR_ID = #{usrId}
+    </select>
+
+    <!-- 현재 사용자의 팔로우 관계를 생성하거나 기존 관계를 승인 상태로 갱신합니다. -->
+    <insert id="followUser">
+        INSERT INTO TB_COMM_FOLLOW (
+            FOLLOWER_USR_ID,
+            FOLLOWING_USR_ID,
+            FOLLOW_STAT,
+            FRST_REG_USER_ID
+        )
+        VALUES (
+            #{usrId},
+            #{followingUsrId},
+            'ACCEPTED',
+            #{usrId}
+        )
+        ON CONFLICT (FOLLOWER_USR_ID, FOLLOWING_USR_ID)
+        DO UPDATE SET FOLLOW_STAT = 'ACCEPTED'
+    </insert>
+
+    <!-- 현재 사용자의 팔로우 관계를 삭제합니다. -->
+    <delete id="unfollowUser">
+        DELETE FROM TB_COMM_FOLLOW
+        WHERE FOLLOWER_USR_ID = #{usrId}
+          AND FOLLOWING_USR_ID = #{followingUsrId}
+    </delete>
+
     <!-- 게시물 생성에 사용할 다음 일련번호를 조회합니다. -->
     <select id="nextPostSeq" resultType="long">
         SELECT nextval('ysc.tb_comm_post_seq')
@@ -110,6 +161,21 @@
           AND (
               (#{feedType} = 'mine' AND P.USR_ID = #{usrId})
               OR (
+                  #{feedType} = 'profile'
+                  AND P.USR_ID = #{profileUsrId}
+                  AND (
+                      P.VIS_TYP = 'PUBLIC'
+                      OR P.USR_ID = #{usrId}
+                      OR EXISTS (
+                          SELECT 1
+                          FROM TB_COMM_FOLLOW F
+                          WHERE F.FOLLOWER_USR_ID = #{usrId}
+                            AND F.FOLLOWING_USR_ID = P.USR_ID
+                            AND F.FOLLOW_STAT = 'ACCEPTED'
+                      )
+                  )
+              )
+              OR (
                   #{feedType} = 'saved'
                   AND EXISTS (
                       SELECT 1
@@ -130,7 +196,7 @@
                   )
               )
               OR (
-                  #{feedType} NOT IN ('mine', 'saved')
+                  #{feedType} NOT IN ('mine', 'saved', 'profile')
                   AND (
                       P.VIS_TYP = 'PUBLIC'
                       OR P.USR_ID = #{usrId}
@@ -145,7 +211,7 @@
               )
           )
           AND (
-              #{feedType} IN ('mine', 'saved')
+              #{feedType} IN ('mine', 'saved', 'profile')
               OR NOT EXISTS (
                   SELECT 1
                   FROM TB_COMM_POST_SEEN V

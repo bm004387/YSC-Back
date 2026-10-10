@@ -4,6 +4,7 @@ import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
+import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import java.util.List;
 
 /** 커뮤니티 업무 처리 기능을 정의합니다. */
@@ -11,6 +12,15 @@ public interface CommunityService {
 
     /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
     CommunityProfileSummaryVO profileSummary(String userId);
+
+    /** 선택한 사용자의 프로필을 조회합니다. */
+    CommunityUserProfileVO userProfile(String viewerUsrId, String profileUsrId);
+
+    /** 선택한 사용자의 게시물을 조회합니다. */
+    List<CommunityPost> userPosts(String viewerUsrId, String profileUsrId);
+
+    /** 팔로우 상태를 변경합니다. */
+    void setFollow(String usrId, String followingUsrId, boolean enabled);
 
     /** 여러 게시물의 댓글 미리보기를 일괄 조회합니다. */
     List<CommunityCommentPreviewVO> commentPreviews(String userId, List<Long> postSeqs);

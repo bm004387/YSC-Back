@@ -6,6 +6,7 @@ import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
+import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.security.SessionManager;
@@ -64,6 +65,32 @@ public class CommunityController {
     @GetMapping("/profile/summary")
     public CommunityProfileSummaryVO profileSummary(HttpServletRequest request) {
         return service.profileSummary(session(request).usrId());
+    }
+
+    /** 게시물 작성자의 프로필과 로그인 사용자의 팔로우 상태를 조회합니다. */
+    @GetMapping("/users/{usrId}/profile")
+    public CommunityUserProfileVO userProfile(
+            HttpServletRequest request,
+            @PathVariable String usrId) {
+        return service.userProfile(session(request).usrId(), usrId);
+    }
+
+    /** 게시물 작성자의 공개 가능한 게시물 목록을 조회합니다. */
+    @GetMapping("/users/{usrId}/posts")
+    public List<CommunityPost> userPosts(
+            HttpServletRequest request,
+            @PathVariable String usrId) {
+        return service.userPosts(session(request).usrId(), usrId);
+    }
+
+    /** 로그인 사용자의 팔로우 상태를 변경합니다. */
+    @PutMapping("/users/{usrId}/follow")
+    public Map<String, Boolean> follow(
+            HttpServletRequest request,
+            @PathVariable String usrId,
+            @RequestBody Toggle body) {
+        service.setFollow(session(request).usrId(), usrId, body.enabled());
+        return Map.of("success", true);
     }
 
     /** 여러 게시물별 최신 댓글 두 건을 한 번에 반환합니다. */

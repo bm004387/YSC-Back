@@ -5,6 +5,7 @@ import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
+import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -13,6 +14,20 @@ public interface CommunityMapper {
 
     /** 내 게시물·팔로워·팔로잉 수를 조회합니다. */
     CommunityProfileSummaryVO selectProfileSummary(@Param("usrId") String usrId);
+
+    /** 사용자 프로필과 로그인 사용자의 팔로우 상태를 조회합니다. */
+    CommunityUserProfileVO selectUserProfile(
+            @Param("usrId") String usrId,
+            @Param("viewerUsrId") String viewerUsrId);
+
+    /** 팔로우 대상 사용자가 존재하는지 확인합니다. */
+    int countUser(@Param("usrId") String usrId);
+
+    /** 사용자의 게시물 피드에 팔로우 사용자 조건을 전달합니다. */
+    int followUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
+
+    /** 팔로우 관계를 해제합니다. */
+    int unfollowUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
 
     /** 여러 게시물 각각의 최신 댓글을 두 건까지 조회합니다. */
     List<CommunityCommentPreviewVO> selectCommentPreviews(
@@ -39,7 +54,8 @@ public interface CommunityMapper {
     List<CommunityPostRowVO> selectFeed(
             @Param("usrId") String usrId,
             @Param("feedType") String feedType,
-            @Param("limit") int limit);
+            @Param("limit") int limit,
+            @Param("profileUsrId") String profileUsrId);
 
     /** 게시물에 연결된 미디어 정보를 조회합니다. */
     List<CommunityPost.CommunityMedia> selectMedia(@Param("postSeq") Long postSeq);

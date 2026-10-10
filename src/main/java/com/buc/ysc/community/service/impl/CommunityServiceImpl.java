@@ -7,6 +7,7 @@ import com.buc.ysc.community.vo.CommunityPostCommandVO;
 import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
+import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,52 @@ public class CommunityServiceImpl implements CommunityService {
         return mapper.selectProfileSummary(userId);
     }
 
+    /** 대상 사용자 존재 여부를 확인하고 프로필 통계를 조회합니다. */
+    @Override
+    public CommunityUserProfileVO userProfile(String viewerUsrId, String profileUsrId) {
+        CommunityUserProfileVO profile = mapper.selectUserProfile(profileUsrId, viewerUsrId);
+        if (profile == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+        return profile;
+    }
+
+    /** 기존 피드 조회 규칙으로 대상 사용자의 공개 가능한 게시물을 조회합니다. */
+    @Override
+    public List<CommunityPost> userPosts(String viewerUsrId, String profileUsrId) {
+        if (mapper.countUser(profileUsrId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+        return mapPosts(mapper.selectFeed(viewerUsrId, "profile", 50, profileUsrId));
+    }
+
+    /** 자기 자신 팔로우를 차단하고 팔로우 상태를 변경합니다. */
+    @Override
+    @Transactional
+    public void setFollow(String usrId, String followingUsrId, boolean enabled) {
+        if (usrId.equals(followingUsrId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "자기 자신은 팔로우할 수 없습니다.");
+        }
+        if (mapper.countUser(followingUsrId) == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+        if (enabled) {
+            mapper.followUser(usrId, followingUsrId);
+        } else {
+            mapper.unfollowUser(usrId, followingUsrId);
+        }
+    }
+
+    private List<CommunityPost> mapPosts(List<CommunityPostRowVO> rows) {
+        return rows.stream()
+                .map(row -> new CommunityPost(
+                        row.getPostSeq(), row.getAuthorId(), row.getAuthorName(),
+                        row.getProfileImageFilSeq(), row.getContent(), row.getCreatedAt(),
+                        row.getLikeCount(), row.getCommentCount(), row.isLikedByMe(),
+                        row.isSavedByMe(), mapper.selectMedia(row.getPostSeq())))
+                .toList();
+    }
+
     /** 게시물 ID를 확인하고 댓글 미리보기를 일괄 조회합니다. */
     @Override
     public List<CommunityCommentPreviewVO> commentPreviews(String userId, List<Long> postSeqs) {
@@ -52,21 +99,9 @@ public class CommunityServiceImpl implements CommunityService {
         String type = List.of("recommended", "following", "popular", "mine", "saved").contains(feedType)
                 ? feedType
                 : "recommended";
-        List<CommunityPostRowVO> rows = mapper.selectFeed(userId, type, Math.max(1, Math.min(limit, 50)));
-        return rows.stream()
-                .map(row -> new CommunityPost(
-                        row.getPostSeq(),
-                        row.getAuthorId(),
-                        row.getAuthorName(),
-                        row.getProfileImageFilSeq(),
-                        row.getContent(),
-                        row.getCreatedAt(),
-                        row.getLikeCount(),
-                        row.getCommentCount(),
-                        row.isLikedByMe(),
-                        row.isSavedByMe(),
-                        mapper.selectMedia(row.getPostSeq())))
-                .toList();
+        List<CommunityPostRowVO> rows = mapper.selectFeed(
+                userId, type, Math.max(1, Math.min(limit, 50)), userId);
+        return mapPosts(rows);
     }
 
     /** 게시물 공개 권한을 검사한 뒤 활성 댓글을 반환합니다. */

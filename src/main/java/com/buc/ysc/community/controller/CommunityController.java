@@ -7,6 +7,7 @@ import com.buc.ysc.community.vo.CommunityPost;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityUserProfileVO;
+import com.buc.ysc.community.vo.CommunityUserSearchVO;
 import com.buc.ysc.file.service.FileStorageService;
 import com.buc.ysc.file.vo.StoredFile;
 import com.buc.ysc.security.SessionManager;
@@ -91,6 +92,25 @@ public class CommunityController {
             @RequestBody Toggle body) {
         service.setFollow(session(request).usrId(), usrId, body.enabled());
         return Map.of("success", true);
+    }
+
+    /** 게시물 본문을 검색해 접근 가능한 결과를 반환합니다. */
+    @GetMapping("/search/posts")
+    public List<CommunityPost> searchPosts(
+            HttpServletRequest request,
+            @RequestParam String query,
+            @RequestParam(defaultValue = "50") int limit) {
+        return service.searchPosts(session(request).usrId(), query, limit);
+    }
+
+    /** 게시물이 없는 계정도 포함해 계정 ID와 이름으로 검색합니다. */
+    @GetMapping("/search/users")
+    public List<CommunityUserSearchVO> searchUsers(
+            HttpServletRequest request,
+            @RequestParam String query,
+            @RequestParam(defaultValue = "discover") String filter,
+            @RequestParam(defaultValue = "50") int limit) {
+        return service.searchUsers(session(request).usrId(), query, filter, limit);
     }
 
     /** 여러 게시물별 최신 댓글 두 건을 한 번에 반환합니다. */

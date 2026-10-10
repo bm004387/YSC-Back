@@ -8,6 +8,7 @@ import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityUserProfileVO;
+import com.buc.ysc.community.vo.CommunityUserSearchVO;
 import com.buc.ysc.file.service.FileStorageService;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,6 +70,45 @@ public class CommunityServiceImpl implements CommunityService {
         } else {
             mapper.unfollowUser(usrId, followingUsrId);
         }
+    }
+
+    /** 공개 범위에 따라 읽을 수 있는 게시물 본문을 검색합니다. */
+    @Override
+    public List<CommunityPost> searchPosts(String usrId, String query, int limit) {
+        String keyword = normalizeSearchQuery(query);
+        return mapPosts(mapper.searchPosts(
+                usrId,
+                keyword,
+                Math.max(1, Math.min(limit, 50))));
+    }
+
+    /** 계정 테이블을 직접 검색하여 게시물이 없는 사용자도 반환합니다. */
+    @Override
+    public List<CommunityUserSearchVO> searchUsers(
+            String usrId,
+            String query,
+            String userFilter,
+            int limit) {
+        String keyword = normalizeSearchQuery(query);
+        String filter = List.of("discover", "following", "followers").contains(userFilter)
+                ? userFilter
+                : "discover";
+        return mapper.searchUsers(
+                usrId,
+                keyword,
+                filter,
+                Math.max(1, Math.min(limit, 50)));
+    }
+
+    private String normalizeSearchQuery(String query) {
+        if (query == null || query.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검색어를 입력해 주세요.");
+        }
+        String keyword = query.trim();
+        if (keyword.length() > 100) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검색어는 100자까지 입력할 수 있습니다.");
+        }
+        return keyword;
     }
 
     private List<CommunityPost> mapPosts(List<CommunityPostRowVO> rows) {

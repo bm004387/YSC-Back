@@ -76,6 +76,98 @@
           AND FOLLOWING_USR_ID = #{followingUsrId}
     </delete>
 
+    <!-- 계정 테이블에서 직접 검색하여 게시물이 없는 사용자도 조회합니다. -->
+    <select id="searchUsers" resultType="com.buc.ysc.community.vo.CommunityUserSearchVO">
+        SELECT U.USR_ID AS usrId
+             , U.USR_NM AS usrNm
+             , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
+             , (SELECT COUNT(*) FROM TB_COMM_POST P WHERE P.USR_ID = U.USR_ID AND P.POST_STAT = 'ACTIVE') AS postCount
+             , EXISTS (
+                   SELECT 1
+                   FROM TB_COMM_FOLLOW F
+                   WHERE F.FOLLOWER_USR_ID = #{usrId}
+                     AND F.FOLLOWING_USR_ID = U.USR_ID
+                     AND F.FOLLOW_STAT = 'ACCEPTED'
+               ) AS following
+        FROM TB_USR U
+        WHERE U.USR_ID &lt;&gt; #{usrId}
+          AND (
+              U.USR_ID ILIKE '%' || #{query} || '%'
+              OR U.USR_NM ILIKE '%' || #{query} || '%'
+          )
+          AND (
+              #{userFilter} = 'discover'
+              OR (
+                  #{userFilter} = 'following'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM TB_COMM_FOLLOW F
+                      WHERE F.FOLLOWER_USR_ID = #{usrId}
+                        AND F.FOLLOWING_USR_ID = U.USR_ID
+                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                  )
+              )
+              OR (
+                  #{userFilter} = 'followers'
+                  AND EXISTS (
+                      SELECT 1
+                      FROM TB_COMM_FOLLOW F
+                      WHERE F.FOLLOWING_USR_ID = #{usrId}
+                        AND F.FOLLOWER_USR_ID = U.USR_ID
+                        AND F.FOLLOW_STAT = 'ACCEPTED'
+                  )
+              )
+          )
+        ORDER BY U.USR_NM, U.USR_ID
+        LIMIT #{limit}
+    </select>
+
+    <!-- 공개 범위 내에서 게시물 제목·본문·작성자 ID를 검색합니다. -->
+    <select id="searchPosts" resultType="com.buc.ysc.community.vo.CommunityPostRowVO">
+        SELECT P.POST_SEQ AS postSeq
+             , P.USR_ID AS authorId
+             , U.USR_NM AS authorName
+             , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
+             , P.POST_CN AS content
+             , TO_CHAR(P.POST_DTM, 'YYYY-MM-DD"T"HH24:MI:SS') AS createdAt
+             , (SELECT COUNT(*) FROM TB_COMM_POST_LIKE L WHERE L.POST_SEQ = P.POST_SEQ) AS likeCount
+             , (SELECT COUNT(*) FROM TB_COMM_CMT C WHERE C.POST_SEQ = P.POST_SEQ AND C.CMT_STAT = 'ACTIVE') AS commentCount
+             , EXISTS (
+                   SELECT 1
+                   FROM TB_COMM_POST_LIKE L
+                   WHERE L.POST_SEQ = P.POST_SEQ
+                     AND L.USR_ID = #{usrId}
+               ) AS likedByMe
+             , EXISTS (
+                   SELECT 1
+                   FROM TB_COMM_POST_SAVE S
+                   WHERE S.POST_SEQ = P.POST_SEQ
+                     AND S.USR_ID = #{usrId}
+               ) AS savedByMe
+        FROM TB_COMM_POST P
+        JOIN TB_USR U ON U.USR_ID = P.USR_ID
+        WHERE P.POST_STAT = 'ACTIVE'
+          AND (
+              COALESCE(P.POST_TTL, '') ILIKE '%' || #{query} || '%'
+              OR P.POST_CN ILIKE '%' || #{query} || '%'
+              OR P.USR_ID ILIKE '%' || #{query} || '%'
+              OR U.USR_NM ILIKE '%' || #{query} || '%'
+          )
+          AND (
+              P.VIS_TYP = 'PUBLIC'
+              OR P.USR_ID = #{usrId}
+              OR EXISTS (
+                  SELECT 1
+                  FROM TB_COMM_FOLLOW F
+                  WHERE F.FOLLOWER_USR_ID = #{usrId}
+                    AND F.FOLLOWING_USR_ID = P.USR_ID
+                    AND F.FOLLOW_STAT = 'ACCEPTED'
+              )
+          )
+        ORDER BY P.POST_DTM DESC
+        LIMIT #{limit}
+    </select>
+
     <!-- 게시물 생성에 사용할 다음 일련번호를 조회합니다. -->
     <select id="nextPostSeq" resultType="long">
         SELECT nextval('ysc.tb_comm_post_seq')

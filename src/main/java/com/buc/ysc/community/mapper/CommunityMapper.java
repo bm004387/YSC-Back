@@ -6,6 +6,7 @@ import com.buc.ysc.community.vo.CommunityPostRowVO;
 import com.buc.ysc.community.vo.CommunityProfileSummaryVO;
 import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityUserProfileVO;
+import com.buc.ysc.community.vo.CommunityUserSearchVO;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 
@@ -28,6 +29,19 @@ public interface CommunityMapper {
 
     /** 팔로우 관계를 해제합니다. */
     int unfollowUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
+
+    /** 검색어와 관계 필터에 맞는 계정을 조회합니다. */
+    List<CommunityUserSearchVO> searchUsers(
+            @Param("usrId") String usrId,
+            @Param("query") String query,
+            @Param("userFilter") String userFilter,
+            @Param("limit") int limit);
+
+    /** 공개 범위에 맞는 게시물 중 본문 검색 결과를 조회합니다. */
+    List<CommunityPostRowVO> searchPosts(
+            @Param("usrId") String usrId,
+            @Param("query") String query,
+            @Param("limit") int limit);
 
     /** 여러 게시물 각각의 최신 댓글을 두 건까지 조회합니다. */
     List<CommunityCommentPreviewVO> selectCommentPreviews(

@@ -9,4 +9,16 @@ public interface SmsService {
     SmsResponse send(SmsSendRequest request);
 
     SmsResponse verify(SmsVerifyRequest request);
+
+    SmsResponse sendIdRecovery(String hpNo);
+
+    SmsResponse verifyIdRecovery(String hpNo, String code);
+
+    SmsResponse sendPasswordRecovery(String usrId, String hpNo);
+
+    SmsResponse verifyPasswordRecovery(String usrId, String hpNo, String code);
+
+    boolean consumeIdRecoveryVerification(String hpNo);
+
+    boolean consumePasswordRecoveryVerification(String usrId, String hpNo);
 }

@@ -37,8 +37,17 @@
                     ELSE FALSE
                      END
           FROM TB_USR
-         WHERE HP_NO = #{hpNo}
+         WHERE REGEXP_REPLACE(HP_NO, '[^0-9]', '', 'g') = #{hpNo}
 
+    </select>
+
+    <!-- 인증된 휴대폰 번호로 사용자 아이디를 조회합니다. -->
+    <select id="selectUsrIdByHpNo" parameterType="string" resultType="string">
+        /* com.buc.ysc.user.mapper.UserMapper.selectUsrIdByHpNo 아이디 찾기 */
+        SELECT USR_ID
+          FROM TB_USR
+         WHERE REGEXP_REPLACE(HP_NO, '[^0-9]', '', 'g') = #{hpNo}
+         LIMIT 1
     </select>
 
     <!-- 회원가입 -->

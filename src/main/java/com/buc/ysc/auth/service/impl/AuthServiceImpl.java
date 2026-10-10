@@ -14,6 +14,12 @@ import com.buc.ysc.auth.vo.record.PinLoginRequest;
 import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.auth.vo.record.LoginRequest;
+import com.buc.ysc.auth.vo.record.RecoveryIdRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordSendRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordVerifyRequest;
+import com.buc.ysc.auth.vo.record.PasswordResetRequest;
+import com.buc.ysc.auth.vo.response.RecoveryIdResponse;
+import com.buc.ysc.auth.service.SmsService;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.util.MsgUtil;
 import org.springframework.http.HttpStatus;
@@ -29,16 +35,18 @@ public class AuthServiceImpl implements AuthService {
     private final SessionManager sessionManager;
     private final MsgUtil msgUtil;
     private final PinLoginThrottle pinLoginThrottle;
+    private final SmsService smsService;
 
 
     public AuthServiceImpl(UserMapper userMapper, PasswordEncoder passwordEncoder,
                            SessionManager sessionManager, MsgUtil msgUtil,
-                           PinLoginThrottle pinLoginThrottle) {
+                           PinLoginThrottle pinLoginThrottle, SmsService smsService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.sessionManager = sessionManager;
         this.msgUtil = msgUtil;
         this.pinLoginThrottle = pinLoginThrottle;
+        this.smsService = smsService;
     }
 
 
@@ -156,5 +164,62 @@ public class AuthServiceImpl implements AuthService {
                 user.getDtlAdr()
         );
         return new LoginResponse(accessToken, "Bearer", sessionManager.getExpiresInSeconds(false), userInfo);
+    }
+
+    /** 등록된 휴대폰 번호로 아이디 찾기 인증번호를 보냅니다. */
+    @Override
+    public SmsResponse sendIdRecoveryCode(String hpNo) {
+        return smsService.sendIdRecovery(hpNo);
+    }
+
+    /** 인증번호를 확인하고 휴대폰 번호에 등록된 아이디를 반환합니다. */
+    @Override
+    public RecoveryIdResponse findId(RecoveryIdRequest request) {
+        SmsResponse verification = smsService.verifyIdRecovery(request.hpNo(), request.code());
+        if (!verification.success()) {
+            return new RecoveryIdResponse(false, verification.message(), null);
+        }
+        smsService.consumeIdRecoveryVerification(request.hpNo());
+        String usrId = userMapper.selectUsrIdByHpNo(normalizePhone(request.hpNo()));
+        if (usrId == null) {
+            return new RecoveryIdResponse(false, msgUtil.getMsg("AUTH", "009"), null);
+        }
+        return new RecoveryIdResponse(true, verification.message(), usrId);
+    }
+
+    /** 아이디와 휴대폰 번호가 등록 정보와 일치할 때 비밀번호 재설정 코드를 보냅니다. */
+    @Override
+    public SmsResponse sendPasswordRecoveryCode(RecoveryPasswordSendRequest request) {
+        return smsService.sendPasswordRecovery(request.usrId(), request.hpNo());
+    }
+
+    /** 비밀번호 재설정 인증번호를 확인하고 서버에 짧은 인증 상태를 저장합니다. */
+    @Override
+    public SmsResponse verifyPasswordRecoveryCode(RecoveryPasswordVerifyRequest request) {
+        return smsService.verifyPasswordRecovery(request.usrId(), request.hpNo(), request.code());
+    }
+
+    /** 휴대폰 인증이 완료된 계정의 비밀번호를 변경합니다. */
+    @Override
+    public SmsResponse resetPassword(PasswordResetRequest request) {
+        if (!request.newPassword().equals(request.confirmPassword())) {
+            return new SmsResponse(false, msgUtil.getMsg("COMMON", "003"));
+        }
+        if (!smsService.consumePasswordRecoveryVerification(request.usrId(), request.hpNo())) {
+            return new SmsResponse(false, msgUtil.getMsg("SMS", "006"));
+        }
+        UserVO update = new UserVO();
+        update.setUsrId(request.usrId());
+        update.setPwd(passwordEncoder.encode(request.newPassword()));
+        update.setSystemUserId(request.usrId());
+        if (userMapper.updatePassword(update) != 1) {
+            return new SmsResponse(false, msgUtil.getMsg("MYINFO", "008"));
+        }
+        sessionManager.deleteAllSessionsForUser(request.usrId());
+        return new SmsResponse(true, msgUtil.getMsg("AUTH", "011"));
+    }
+
+    private String normalizePhone(String hpNo) {
+        return hpNo.replaceAll("[^0-9]", "");
     }
 }

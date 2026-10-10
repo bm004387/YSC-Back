@@ -8,6 +8,12 @@ import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.auth.vo.record.PinLoginRequest;
 import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.auth.vo.record.LoginRequest;
+import com.buc.ysc.auth.vo.record.RecoveryIdRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordSendRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordVerifyRequest;
+import com.buc.ysc.auth.vo.record.PasswordResetRequest;
+import com.buc.ysc.auth.vo.response.SmsResponse;
+import com.buc.ysc.auth.vo.response.RecoveryIdResponse;
 
 public interface AuthService {
 
@@ -20,4 +26,14 @@ public interface AuthService {
     LoginResponse login(LoginRequest request);
 
     UsrIdCheckResponse checkUsrId(String usrId);
+
+    SmsResponse sendIdRecoveryCode(String hpNo);
+
+    RecoveryIdResponse findId(RecoveryIdRequest request);
+
+    SmsResponse sendPasswordRecoveryCode(RecoveryPasswordSendRequest request);
+
+    SmsResponse verifyPasswordRecoveryCode(RecoveryPasswordVerifyRequest request);
+
+    SmsResponse resetPassword(PasswordResetRequest request);
 }

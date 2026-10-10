@@ -11,6 +11,8 @@ public interface UserMapper {
 
     boolean existsHpNo(String hpNo);
 
+    String selectUsrIdByHpNo(String hpNo);
+
 
     void insertUser(UserVO usrId);
 

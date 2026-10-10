@@ -10,6 +10,11 @@ import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.auth.vo.record.PinLoginRequest;
 import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.auth.vo.record.LoginRequest;
+import com.buc.ysc.auth.vo.record.RecoveryIdRequest;
+import com.buc.ysc.auth.vo.record.RecoveryIdSendRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordSendRequest;
+import com.buc.ysc.auth.vo.record.RecoveryPasswordVerifyRequest;
+import com.buc.ysc.auth.vo.record.PasswordResetRequest;
 import com.buc.ysc.util.MsgUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -49,6 +54,36 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** 아이디 찾기에 사용할 휴대폰 인증번호를 발송합니다. */
+    @PostMapping("/recovery/id/send")
+    public ResponseEntity<?> sendIdRecoveryCode(@Valid @RequestBody RecoveryIdSendRequest request) {
+        return ResponseEntity.ok(authService.sendIdRecoveryCode(request.hpNo()));
+    }
+
+    /** 휴대폰 인증번호를 확인하고 아이디를 찾습니다. */
+    @PostMapping("/recovery/id/find")
+    public ResponseEntity<?> findId(@Valid @RequestBody RecoveryIdRequest request) {
+        return ResponseEntity.ok(authService.findId(request));
+    }
+
+    /** 아이디와 휴대폰 번호 확인 후 비밀번호 재설정 코드를 발송합니다. */
+    @PostMapping("/recovery/password/send")
+    public ResponseEntity<?> sendPasswordRecoveryCode(@Valid @RequestBody RecoveryPasswordSendRequest request) {
+        return ResponseEntity.ok(authService.sendPasswordRecoveryCode(request));
+    }
+
+    /** 비밀번호 재설정용 휴대폰 인증번호를 확인합니다. */
+    @PostMapping("/recovery/password/verify")
+    public ResponseEntity<?> verifyPasswordRecoveryCode(@Valid @RequestBody RecoveryPasswordVerifyRequest request) {
+        return ResponseEntity.ok(authService.verifyPasswordRecoveryCode(request));
+    }
+
+    /** 인증이 완료된 계정의 비밀번호를 새 비밀번호로 변경합니다. */
+    @PostMapping("/recovery/password/reset")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 
     /** 가입 시 전달한 비밀번호를 확인한 뒤 PIN 해시를 저장합니다. */

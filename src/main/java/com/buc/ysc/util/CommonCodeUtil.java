@@ -6,13 +6,12 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 /** 공통코드와 상세코드로 공통코드명 또는 설명을 조회합니다. */
 @Component
-@RequiredArgsConstructor
 public class CommonCodeUtil {
 
     private static final String CODE_KEY = "COM:ALL";
@@ -24,6 +23,13 @@ public class CommonCodeUtil {
 
     private final CommonCodeMapper mapper;
     private final RedisTemplate<String, String> redisTemplate;
+
+    public CommonCodeUtil(
+            CommonCodeMapper mapper,
+            @Qualifier("msgRedisTemplate") RedisTemplate<String, String> redisTemplate) {
+        this.mapper = mapper;
+        this.redisTemplate = redisTemplate;
+    }
 
     /** 분류코드와 상세코드에 해당하는 코드값을 반환합니다. */
     public String getCodeName(String comCd, String comDtlCd) {

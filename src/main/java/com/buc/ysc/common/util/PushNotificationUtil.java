@@ -38,6 +38,7 @@ public class PushNotificationUtil {
             Map<String, String> data) {
         List<String> tokens = tokenMapper.selectActiveTokens(usrId);
         if (tokens == null || tokens.isEmpty()) {
+            log.warn("푸시 발송 대상 기기 토큰이 없습니다. 사용자 기기에서 토큰 등록 여부를 확인하세요.");
             return 0;
         }
         int sentCount = 0;

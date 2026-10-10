@@ -13,6 +13,7 @@ import com.buc.ysc.auth.vo.response.UserInfoResponse;
 import com.buc.ysc.auth.vo.record.PinLoginRequest;
 import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.auth.vo.record.SignupRequest;
+import com.buc.ysc.auth.vo.record.LoginRequest;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.util.MsgUtil;
 import org.springframework.http.HttpStatus;
@@ -91,6 +92,24 @@ public class AuthServiceImpl implements AuthService {
         if (userMapper.updatePinPassword(user) != 1) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, msgUtil.getMsg("SIGNUP", "004"));
         }
+    }
+
+    /** 로그아웃 뒤 사용할 아이디·비밀번호 로그인을 처리합니다. */
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        UserVO user = userMapper.selectByUsrId(request.usrId());
+        if (user == null || !passwordEncoder.matches(request.pwd(), user.getPwd())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
+        }
+
+        UserSession session = new UserSession(
+                user.getUsrId(), user.getUsrNm(), user.getRol(),
+                user.getHpNo(), user.getAdr(), user.getDtlAdr());
+        String accessToken = sessionManager.createSession(session, false);
+        UserInfoResponse userInfo = new UserInfoResponse(
+                user.getUsrId(), user.getUsrNm(), user.getRol(),
+                user.getHpNo(), user.getAdr(), user.getDtlAdr());
+        return new LoginResponse(accessToken, "Bearer", sessionManager.getExpiresInSeconds(false), userInfo);
     }
 
     /** BCrypt PIN을 검증하고 기존 Redis 세션이 있으면 재사용합니다. */

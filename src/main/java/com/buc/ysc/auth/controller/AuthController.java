@@ -9,6 +9,7 @@ import com.buc.ysc.auth.vo.response.UserInfoResponse;
 import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.auth.vo.record.PinLoginRequest;
 import com.buc.ysc.auth.vo.record.PinSetupRequest;
+import com.buc.ysc.auth.vo.record.LoginRequest;
 import com.buc.ysc.util.MsgUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -42,6 +43,12 @@ public class AuthController {
     @GetMapping("/check-user-id")
     public ResponseEntity<UsrIdCheckResponse> checkUsrId(@RequestParam String usrId) {
         return ResponseEntity.ok(authService.checkUsrId(usrId.trim()));
+    }
+
+    /** PIN 설정이 없거나 로그아웃한 사용자를 아이디와 비밀번호로 로그인합니다. */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     /** 가입 시 전달한 비밀번호를 확인한 뒤 PIN 해시를 저장합니다. */
@@ -93,7 +100,13 @@ public class AuthController {
 
         if (authorization != null &&authorization.startsWith("Bearer ")) {
             String token = authorization.substring(7);
-            sessionManager.deleteSession(token);
+            var session = sessionManager.getSession(token);
+            if (session != null) {
+                sessionManager.deleteSession(token);
+                sessionManager.deleteAllSessionsForUser(session.usrId());
+            } else {
+                sessionManager.deleteSession(token);
+            }
         }
 
         return ResponseEntity.ok(java.util.Map.of("message",msgUtil.getMsg("AUTH", "002"))

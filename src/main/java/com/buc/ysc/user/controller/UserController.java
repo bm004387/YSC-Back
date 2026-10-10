@@ -9,6 +9,7 @@ import com.buc.ysc.user.vo.request.AddressChangeRequest;
 import com.buc.ysc.user.vo.request.PasswordChangeRequest;
 import com.buc.ysc.user.vo.request.PasswordVerifyRequest;
 import com.buc.ysc.user.vo.request.UserVO;
+import com.buc.ysc.user.vo.request.PinChangeRequest;
 import com.buc.ysc.user.vo.response.UserProfileResponse;
 import com.buc.ysc.util.MsgUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
@@ -88,6 +90,20 @@ public class UserController {
                 && passwordEncoder.matches(body.currentPassword(), user.getPwd());
         String message = msgUtil.getMsg("MYINFO", valid ? "014" : "001");
         return ResponseEntity.ok(java.util.Map.of("valid", valid, "message", message));
+    }
+
+    /** 현재 로그인한 사용자의 PIN을 새 PIN으로 변경합니다. */
+    @PutMapping("/me/pin")
+    public ResponseEntity<?> changePin(HttpServletRequest request, @Valid @RequestBody PinChangeRequest body) {
+        UserSession session = requireSession(tokenFrom(request));
+        UserVO update = new UserVO();
+        update.setUsrId(session.usrId());
+        update.setPinPwd(passwordEncoder.encode(body.pin()));
+        update.setSystemUserId(session.usrId());
+        if (userMapper.updatePinPassword(update) != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, msgUtil.getMsg("MYINFO", "010"));
+        }
+        return ResponseEntity.ok(java.util.Map.of("message", msgUtil.getMsg("AUTH", "007")));
     }
 
     @PutMapping("/me/address")

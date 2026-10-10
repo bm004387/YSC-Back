@@ -99,7 +99,8 @@ public class CommunityController {
             HttpServletRequest request,
             @PathVariable String usrId,
             @RequestBody Toggle body) {
-        service.setFollow(session(request).usrId(), usrId, body.enabled());
+        UserSession user = session(request);
+        service.setFollow(user.usrId(), user.usrNm(), usrId, body.enabled());
         return Map.of("success", true);
     }
 

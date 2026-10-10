@@ -10,6 +10,8 @@ import com.buc.ysc.community.vo.CommunityCommentPreviewVO;
 import com.buc.ysc.community.vo.CommunityUserProfileVO;
 import com.buc.ysc.community.vo.CommunityUserSearchVO;
 import com.buc.ysc.file.service.FileStorageService;
+import com.buc.ysc.notification.NewFollowerEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -24,10 +26,15 @@ public class CommunityServiceImpl implements CommunityService {
 
     private final CommunityMapper mapper;
     private final FileStorageService fileStorage;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CommunityServiceImpl(CommunityMapper mapper, FileStorageService fileStorage) {
+    public CommunityServiceImpl(
+            CommunityMapper mapper,
+            FileStorageService fileStorage,
+            ApplicationEventPublisher eventPublisher) {
         this.mapper = mapper;
         this.fileStorage = fileStorage;
+        this.eventPublisher = eventPublisher;
     }
 
     /** 로그인 사용자의 게시물·팔로워·팔로잉 수를 조회합니다. */
@@ -58,7 +65,7 @@ public class CommunityServiceImpl implements CommunityService {
     /** 자기 자신 팔로우를 차단하고 팔로우 상태를 변경합니다. */
     @Override
     @Transactional
-    public void setFollow(String usrId, String followingUsrId, boolean enabled) {
+    public void setFollow(String usrId, String usrNm, String followingUsrId, boolean enabled) {
         if (usrId.equals(followingUsrId)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "자기 자신은 팔로우할 수 없습니다.");
         }
@@ -66,7 +73,11 @@ public class CommunityServiceImpl implements CommunityService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다.");
         }
         if (enabled) {
-            mapper.followUser(usrId, followingUsrId);
+            int changed = mapper.followUser(usrId, followingUsrId);
+            if (changed > 0) {
+                eventPublisher.publishEvent(
+                        new NewFollowerEvent(followingUsrId, usrId, usrNm));
+            }
         } else {
             mapper.unfollowUser(usrId, followingUsrId);
         }

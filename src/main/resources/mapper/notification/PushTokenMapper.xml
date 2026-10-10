@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.buc.ysc.notification.mapper.PushTokenMapper">
+
+    <!-- 기기 토큰을 저장하고 기존 토큰이면 소유자와 플랫폼을 최신 값으로 갱신합니다. -->
+    <insert id="upsertToken">
+        INSERT INTO TB_PUSH_TOKEN (
+            PUSH_TOKEN
+            ,  USR_ID
+            ,  PLATFORM
+            ,  USE_YN
+            ,  FRST_REG_USER_ID
+        )
+        VALUES (
+            #{token}
+            ,  #{usrId}
+            ,  #{platform}
+            ,  'Y'
+            ,  #{usrId}
+        )
+        ON CONFLICT (PUSH_TOKEN)
+        DO UPDATE SET
+               USR_ID = EXCLUDED.USR_ID
+            ,  PLATFORM = EXCLUDED.PLATFORM
+            ,  USE_YN = 'Y'
+            ,  LAST_MOD_USER_ID = EXCLUDED.USR_ID
+            ,  LAST_MOD_DTM = TO_CHAR(CURRENT_TIMESTAMP, 'YYYYMMDDHH24MISS')
+    </insert>
+
+    <!-- 현재 사용자 계정에 등록된 해당 기기의 토큰만 삭제합니다. -->
+    <delete id="deleteToken">
+        DELETE FROM TB_PUSH_TOKEN
+        WHERE USR_ID = #{usrId}
+          AND PUSH_TOKEN = #{token}
+    </delete>
+
+    <!-- 푸시 발송 대상 사용자의 활성 기기 토큰을 조회합니다. -->
+    <select id="selectActiveTokens" resultType="string">
+        SELECT PUSH_TOKEN
+        FROM TB_PUSH_TOKEN
+        WHERE USR_ID = #{usrId}
+          AND USE_YN = 'Y'
+    </select>
+
+    <!-- FCM에서 만료 또는 폐기된 것으로 확인한 토큰을 제거합니다. -->
+    <delete id="deleteTokenValue">
+        DELETE FROM TB_PUSH_TOKEN
+        WHERE PUSH_TOKEN = #{token}
+    </delete>
+</mapper>

@@ -10,6 +10,7 @@ UPLOAD_DIR="${HOME}/ysc-uploads"
 UPLOAD_CONTAINER_PATH="/app/uploads"
 MESSAGE_CACHE_URL="http://127.0.0.1:8080/api/msg/all"
 MESSAGE_CACHE_RESPONSE=""
+FIREBASE_CREDENTIALS_FILE="${FIREBASE_CREDENTIALS_FILE:-${HOME}/firebase/ysc-firebase-service-account.json}"
 
 log() {
     local level="$1"
@@ -79,17 +80,32 @@ else
 fi
 
 log INFO "[7/8] 새 애플리케이션 컨테이너 시작"
-docker run -d \
-    --name "$APP_NAME" \
-    --network "$NETWORK_NAME" \
-    --env-file "$ENV_FILE" \
-    --env SPRING_PROFILES_ACTIVE=prod \
-    --env "FILE_STORAGE_ROOT=$UPLOAD_CONTAINER_PATH" \
-    --publish 127.0.0.1:8080:8080 \
-    --volume "$UPLOAD_DIR:$UPLOAD_CONTAINER_PATH" \
-    --restart unless-stopped \
-    --label "com.ysc.deploy.commit=$DEPLOY_COMMIT" \
-    "$IMAGE_NAME" >/dev/null
+DOCKER_RUN_ARGS=(
+    -d
+    --name "$APP_NAME"
+    --network "$NETWORK_NAME"
+    --env-file "$ENV_FILE"
+    --env SPRING_PROFILES_ACTIVE=prod
+    --env "FILE_STORAGE_ROOT=$UPLOAD_CONTAINER_PATH"
+    --publish 127.0.0.1:8080:8080
+    --volume "$UPLOAD_DIR:$UPLOAD_CONTAINER_PATH"
+    --restart unless-stopped
+    --label "com.ysc.deploy.commit=$DEPLOY_COMMIT"
+)
+
+if grep -Eq '^[[:space:]]*APP_PUSH_ENABLED=true([[:space:]]|$)' "$ENV_FILE"; then
+    if [[ ! -f "$FIREBASE_CREDENTIALS_FILE" ]]; then
+        log ERROR "푸시 알림이 활성화됐지만 Firebase 서비스 계정 파일을 찾을 수 없습니다: $FIREBASE_CREDENTIALS_FILE"
+        exit 1
+    fi
+    DOCKER_RUN_ARGS+=(
+        --env GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/firebase-service-account.json
+        --volume "$FIREBASE_CREDENTIALS_FILE:/run/secrets/firebase-service-account.json:ro"
+    )
+    log INFO "Firebase Admin 자격 증명을 읽기 전용으로 연결합니다."
+fi
+
+docker run "${DOCKER_RUN_ARGS[@]}" "$IMAGE_NAME" >/dev/null
 
 log INFO "애플리케이션 기동 및 메시지 캐시 초기화 확인"
 MESSAGE_CACHE_RESPONSE="$(mktemp)"

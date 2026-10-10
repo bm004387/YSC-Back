@@ -100,6 +100,15 @@ public class CommunityServiceImpl implements CommunityService {
                 Math.max(1, Math.min(limit, 50)));
     }
 
+    /** 관계 종류를 검증한 뒤 로그인 사용자의 목록만 조회합니다. */
+    @Override
+    public List<CommunityUserSearchVO> followUsers(String usrId, String relationType, int limit) {
+        if (!List.of("followers", "following").contains(relationType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "팔로우 목록 종류가 올바르지 않습니다.");
+        }
+        return mapper.selectFollowUsers(usrId, relationType, Math.max(1, Math.min(limit, 100)));
+    }
+
     private String normalizeSearchQuery(String query) {
         if (query == null || query.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "검색어를 입력해 주세요.");

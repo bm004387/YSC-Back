@@ -37,6 +37,12 @@ public interface CommunityMapper {
             @Param("userFilter") String userFilter,
             @Param("limit") int limit);
 
+    /** 로그인 사용자의 팔로워 또는 팔로잉 목록을 조회합니다. */
+    List<CommunityUserSearchVO> selectFollowUsers(
+            @Param("usrId") String usrId,
+            @Param("relationType") String relationType,
+            @Param("limit") int limit);
+
     /** 공개 범위에 맞는 게시물 중 본문 검색 결과를 조회합니다. */
     List<CommunityPostRowVO> searchPosts(
             @Param("usrId") String usrId,

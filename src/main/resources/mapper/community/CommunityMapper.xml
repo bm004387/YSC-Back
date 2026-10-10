@@ -122,6 +122,39 @@
         LIMIT #{limit}
     </select>
 
+    <!-- 팔로워·팔로잉 목록과 현재 사용자가 해당 계정을 팔로우하는지 조회합니다. -->
+    <select id="selectFollowUsers" resultType="com.buc.ysc.community.vo.CommunityUserSearchVO">
+        SELECT U.USR_ID AS usrId
+             , U.USR_NM AS usrNm
+             , U.PRFL_IMG_FIL_SEQ AS profileImageFilSeq
+             , (
+                   SELECT COUNT(*)
+                   FROM TB_COMM_POST P
+                   WHERE P.USR_ID = U.USR_ID
+                     AND P.POST_STAT = 'ACTIVE'
+               ) AS postCount
+             , EXISTS (
+                   SELECT 1
+                   FROM TB_COMM_FOLLOW F2
+                   WHERE F2.FOLLOWER_USR_ID = #{usrId}
+                     AND F2.FOLLOWING_USR_ID = U.USR_ID
+                     AND F2.FOLLOW_STAT = 'ACCEPTED'
+               ) AS following
+        FROM TB_COMM_FOLLOW F
+        JOIN TB_USR U
+          ON U.USR_ID = CASE
+                            WHEN #{relationType} = 'followers' THEN F.FOLLOWER_USR_ID
+                            ELSE F.FOLLOWING_USR_ID
+                        END
+        WHERE F.FOLLOW_STAT = 'ACCEPTED'
+          AND (
+              (#{relationType} = 'followers' AND F.FOLLOWING_USR_ID = #{usrId})
+              OR (#{relationType} = 'following' AND F.FOLLOWER_USR_ID = #{usrId})
+          )
+        ORDER BY U.USR_NM, U.USR_ID
+        LIMIT #{limit}
+    </select>
+
     <!-- 공개 범위 내에서 게시물 제목·본문·작성자 ID를 검색합니다. -->
     <select id="searchPosts" resultType="com.buc.ysc.community.vo.CommunityPostRowVO">
         SELECT P.POST_SEQ AS postSeq

@@ -68,6 +68,15 @@ public class CommunityController {
         return service.profileSummary(session(request).usrId());
     }
 
+    /** 로그인 사용자의 팔로워 또는 팔로잉 목록을 조회합니다. */
+    @GetMapping("/profile/follows")
+    public List<CommunityUserSearchVO> followUsers(
+            HttpServletRequest request,
+            @RequestParam String type,
+            @RequestParam(defaultValue = "100") int limit) {
+        return service.followUsers(session(request).usrId(), type, limit);
+    }
+
     /** 게시물 작성자의 프로필과 로그인 사용자의 팔로우 상태를 조회합니다. */
     @GetMapping("/users/{usrId}/profile")
     public CommunityUserProfileVO userProfile(

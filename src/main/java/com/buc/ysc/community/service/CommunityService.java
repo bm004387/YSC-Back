@@ -33,6 +33,9 @@ public interface CommunityService {
             String userFilter,
             int limit);
 
+    /** 로그인 사용자의 팔로워 또는 팔로잉 목록을 조회합니다. */
+    List<CommunityUserSearchVO> followUsers(String usrId, String relationType, int limit);
+
     /** 여러 게시물의 댓글 미리보기를 일괄 조회합니다. */
     List<CommunityCommentPreviewVO> commentPreviews(String userId, List<Long> postSeqs);
 

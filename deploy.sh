@@ -10,6 +10,8 @@ UPLOAD_DIR="${HOME}/ysc-uploads"
 UPLOAD_CONTAINER_PATH="/app/uploads"
 MESSAGE_CACHE_URL="http://127.0.0.1:8080/api/msg/all"
 MESSAGE_CACHE_RESPONSE=""
+COMMON_CODE_CACHE_URL="http://127.0.0.1:8080/api/common-codes/refresh"
+COMMON_CODE_CACHE_RESPONSE=""
 FIREBASE_CREDENTIALS_FILE="${FIREBASE_CREDENTIALS_FILE:-${HOME}/firebase/ysc-firebase-service-account.json}"
 
 log() {
@@ -32,6 +34,9 @@ cleanup() {
     if [[ -n "$MESSAGE_CACHE_RESPONSE" ]]; then
         rm -f "$MESSAGE_CACHE_RESPONSE"
     fi
+    if [[ -n "$COMMON_CODE_CACHE_RESPONSE" ]]; then
+        rm -f "$COMMON_CODE_CACHE_RESPONSE"
+    fi
 }
 
 trap on_error ERR
@@ -40,12 +45,12 @@ trap cleanup EXIT
 log INFO "YSC Backend 배포 시작"
 log INFO "대상 컨테이너=$APP_NAME, 이미지=$IMAGE_NAME, 네트워크=$NETWORK_NAME"
 
-log INFO "[1/7] main 브랜치 최신 코드 가져오기"
+log INFO "[1/9] main 브랜치 최신 코드 가져오기"
 git pull --ff-only origin main
 DEPLOY_COMMIT="$(git rev-parse --short HEAD)"
 log INFO "배포 커밋=$DEPLOY_COMMIT"
 
-log INFO "[2/7] 배포 환경 확인"
+log INFO "[2/9] 배포 환경 확인"
 if [[ ! -f "$ENV_FILE" ]]; then
     log ERROR "환경 파일을 찾을 수 없습니다: $ENV_FILE"
     exit 1
@@ -55,13 +60,13 @@ if ! docker network inspect "$NETWORK_NAME" >/dev/null 2>&1; then
     exit 1
 fi
 
-log INFO "[3/7] Gradle 빌드 및 검증"
+log INFO "[3/9] Gradle 빌드 및 검증"
 ./gradlew clean build
 
-log INFO "[4/7] Docker 이미지 빌드"
+log INFO "[4/9] Docker 이미지 빌드"
 docker build --pull -t "$IMAGE_NAME" .
 
-log INFO "[5/8] 업로드 파일 저장소 준비"
+log INFO "[5/9] 업로드 파일 저장소 준비"
 mkdir -p "$UPLOAD_DIR"
 if [[ -z "$(find "$UPLOAD_DIR" -mindepth 1 -print -quit)" ]] \
     && docker container inspect "$APP_NAME" >/dev/null 2>&1 \
@@ -71,7 +76,7 @@ if [[ -z "$(find "$UPLOAD_DIR" -mindepth 1 -print -quit)" ]] \
     log INFO "기존 컨테이너의 업로드 파일을 영구 저장 경로로 복사했습니다."
 fi
 
-log INFO "[6/8] 기존 애플리케이션 컨테이너 교체"
+log INFO "[6/9] 기존 애플리케이션 컨테이너 교체"
 if docker container inspect "$APP_NAME" >/dev/null 2>&1; then
     docker rm -f "$APP_NAME" >/dev/null
     log INFO "기존 컨테이너를 제거했습니다."
@@ -79,7 +84,7 @@ else
     log INFO "기존 컨테이너가 없어 신규 배포로 진행합니다."
 fi
 
-log INFO "[7/8] 새 애플리케이션 컨테이너 시작"
+log INFO "[7/9] 새 애플리케이션 컨테이너 시작"
 DOCKER_RUN_ARGS=(
     -d
     --name "$APP_NAME"
@@ -107,7 +112,7 @@ fi
 
 docker run "${DOCKER_RUN_ARGS[@]}" "$IMAGE_NAME" >/dev/null
 
-log INFO "애플리케이션 기동 및 메시지 캐시 초기화 확인"
+log INFO "[8/9] 애플리케이션 기동 및 메시지·공통코드 캐시 갱신"
 MESSAGE_CACHE_RESPONSE="$(mktemp)"
 READY=0
 for attempt in $(seq 1 30); do
@@ -144,7 +149,37 @@ else
 fi
 log INFO "메시지 캐시를 DB 기준으로 갱신했습니다 (항목=${MESSAGE_COUNT})."
 
-log INFO "[8/8] 배포 결과"
+log INFO "공통코드 Redis 캐시를 DB 기준으로 갱신합니다"
+COMMON_CODE_CACHE_RESPONSE="$(mktemp)"
+COMMON_CODE_HTTP_STATUS="$(curl --silent --show-error --max-time 15 \
+    --request POST \
+    --output "$COMMON_CODE_CACHE_RESPONSE" \
+    --write-out '%{http_code}' \
+    "$COMMON_CODE_CACHE_URL" 2>/dev/null || true)"
+COMMON_CODE_RESPONSE_COMPACT="$(tr -d '[:space:]' < "$COMMON_CODE_CACHE_RESPONSE" 2>/dev/null || true)"
+
+if [[ "$COMMON_CODE_HTTP_STATUS" != "200" ]]; then
+    log ERROR "공통코드 캐시 갱신 요청 실패 (HTTP=${COMMON_CODE_HTTP_STATUS:-연결 실패})"
+    exit 1
+fi
+
+if command -v jq >/dev/null 2>&1; then
+    COMMON_CODE_COUNT="$(jq 'if type == "array" then length else 0 end' \
+        "$COMMON_CODE_CACHE_RESPONSE" 2>/dev/null || printf '0')"
+    if [[ ! "$COMMON_CODE_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+        log ERROR "공통코드 API가 사용 중인 공통코드 목록을 반환하지 않았습니다."
+        exit 1
+    fi
+else
+    if [[ "$COMMON_CODE_RESPONSE_COMPACT" != \[*\] || "$COMMON_CODE_RESPONSE_COMPACT" == "[]" ]]; then
+        log ERROR "공통코드 API 응답이 비어 있거나 목록 형식이 아닙니다."
+        exit 1
+    fi
+    COMMON_CODE_COUNT="확인 생략(jq 미설치)"
+fi
+log INFO "공통코드 Redis 캐시 갱신 완료 (항목=${COMMON_CODE_COUNT})"
+
+log INFO "[9/9] 배포 결과"
 docker ps --filter "name=^/${APP_NAME}$" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 log INFO "배포 완료 (commit=$DEPLOY_COMMIT)"
 log INFO "애플리케이션 최근 로그"

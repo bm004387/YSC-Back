@@ -121,10 +121,13 @@ public class AuthServiceImpl implements AuthService {
         }
 
         UserVO user = userMapper.selectByUsrId(request.usrId());
-        if (user == null || user.getPinPwd() == null
-                || !passwordEncoder.matches(request.pin(), user.getPinPwd())) {
+        if (user == null) {
             pinLoginThrottle.recordFailure(request.usrId(), remoteAddress);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
+        }
+        if (user.getPinPwd() == null || !passwordEncoder.matches(request.pin(), user.getPinPwd())) {
+            pinLoginThrottle.recordFailure(request.usrId(), remoteAddress);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "008"));
         }
         pinLoginThrottle.clearFailures(request.usrId(), remoteAddress);
 

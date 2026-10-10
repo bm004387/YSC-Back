@@ -30,6 +30,11 @@ public interface CommunityMapper {
     /** 팔로우 관계를 해제합니다. */
     int unfollowUser(@Param("usrId") String usrId, @Param("followingUsrId") String followingUsrId);
 
+    /** 지정한 팔로워와 현재 사용자의 팔로우 관계를 제거합니다. */
+    int removeFollower(
+            @Param("usrId") String usrId,
+            @Param("followerUsrId") String followerUsrId);
+
     /** 검색어와 관계 필터에 맞는 계정을 조회합니다. */
     List<CommunityUserSearchVO> searchUsers(
             @Param("usrId") String usrId,

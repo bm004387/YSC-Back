@@ -23,6 +23,9 @@ public interface CommunityService {
     /** 팔로우 상태를 변경합니다. */
     void setFollow(String usrId, String followingUsrId, boolean enabled);
 
+    /** 현재 사용자를 팔로우하는 계정을 팔로워 목록에서 제거합니다. */
+    void removeFollower(String usrId, String followerUsrId);
+
     /** 공개 범위에 맞는 게시물을 검색합니다. */
     List<CommunityPost> searchPosts(String usrId, String query, int limit);
 

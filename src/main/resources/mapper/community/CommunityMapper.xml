@@ -76,6 +76,13 @@
           AND FOLLOWING_USR_ID = #{followingUsrId}
     </delete>
 
+    <!-- 로그인 사용자를 팔로우하는 상대방의 관계를 삭제합니다. -->
+    <delete id="removeFollower">
+        DELETE FROM TB_COMM_FOLLOW
+        WHERE FOLLOWER_USR_ID = #{followerUsrId}
+          AND FOLLOWING_USR_ID = #{usrId}
+    </delete>
+
     <!-- 계정 테이블에서 직접 검색하여 게시물이 없는 사용자도 조회합니다. -->
     <select id="searchUsers" resultType="com.buc.ysc.community.vo.CommunityUserSearchVO">
         SELECT U.USR_ID AS usrId

@@ -103,6 +103,15 @@ public class CommunityController {
         return Map.of("success", true);
     }
 
+    /** 로그인 사용자의 팔로워 목록에서 지정한 계정을 제거합니다. */
+    @DeleteMapping("/profile/followers/{usrId}")
+    public Map<String, Boolean> removeFollower(
+            HttpServletRequest request,
+            @PathVariable String usrId) {
+        service.removeFollower(session(request).usrId(), usrId);
+        return Map.of("success", true);
+    }
+
     /** 게시물 본문을 검색해 접근 가능한 결과를 반환합니다. */
     @GetMapping("/search/posts")
     public List<CommunityPost> searchPosts(

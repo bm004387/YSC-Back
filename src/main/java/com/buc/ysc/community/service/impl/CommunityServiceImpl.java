@@ -72,6 +72,16 @@ public class CommunityServiceImpl implements CommunityService {
         }
     }
 
+    /** 현재 사용자를 팔로우 중인 계정의 관계만 제거합니다. */
+    @Override
+    @Transactional
+    public void removeFollower(String usrId, String followerUsrId) {
+        if (usrId.equals(followerUsrId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "자기 자신은 팔로워에서 제거할 수 없습니다.");
+        }
+        mapper.removeFollower(usrId, followerUsrId);
+    }
+
     /** 공개 범위에 따라 읽을 수 있는 게시물 본문을 검색합니다. */
     @Override
     public List<CommunityPost> searchPosts(String usrId, String query, int limit) {

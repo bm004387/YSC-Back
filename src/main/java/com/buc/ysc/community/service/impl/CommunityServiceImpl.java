@@ -158,6 +158,7 @@ public class CommunityServiceImpl implements CommunityService {
                 usrId,
                 relationType,
                 Math.max(1, Math.min(limit, 100)),
+                commonCodeUtil.getCodeName("POST_STAT", "001"),
                 commonCodeUtil.getCodeName("FOLLOW_STAT", "001"));
     }
 

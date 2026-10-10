@@ -57,6 +57,7 @@ public interface CommunityMapper {
             @Param("usrId") String usrId,
             @Param("relationType") String relationType,
             @Param("limit") int limit,
+            @Param("postActive") String postActive,
             @Param("followAccepted") String followAccepted);
 
     /** 공개 범위에 맞는 게시물 중 본문 검색 결과를 조회합니다. */

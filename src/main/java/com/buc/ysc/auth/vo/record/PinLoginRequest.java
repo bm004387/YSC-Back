@@ -1,0 +1,20 @@
+package com.buc.ysc.auth.vo.record;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
+/** 아이디와 PIN으로 로그인하기 위한 요청입니다. */
+public record PinLoginRequest(
+
+        @NotBlank
+        @Size(max = 50)
+        String usrId,
+
+        @NotBlank
+        @Pattern(regexp = "^[0-9]{4}$", message = "PIN은 숫자 4자리여야 합니다.")
+        String pin,
+
+        String sessionId
+) {
+}

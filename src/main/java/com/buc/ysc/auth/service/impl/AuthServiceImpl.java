@@ -3,13 +3,15 @@ package com.buc.ysc.auth.service.impl;
 import com.buc.ysc.auth.vo.response.SmsResponse;
 import com.buc.ysc.security.SessionManager;
 import com.buc.ysc.security.UserSession;
+import com.buc.ysc.security.PinLoginThrottle;
 import com.buc.ysc.user.mapper.UserMapper;
 import com.buc.ysc.auth.service.AuthService;
 import com.buc.ysc.auth.vo.record.UsrIdCheckResponse;
 import com.buc.ysc.auth.vo.response.LoginResponse;
 import com.buc.ysc.auth.vo.response.SignupResponse;
 import com.buc.ysc.auth.vo.response.UserInfoResponse;
-import com.buc.ysc.auth.vo.record.LoginRequest;
+import com.buc.ysc.auth.vo.record.PinLoginRequest;
+import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.auth.vo.record.SignupRequest;
 import com.buc.ysc.user.vo.request.UserVO;
 import com.buc.ysc.util.MsgUtil;
@@ -25,14 +27,17 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SessionManager sessionManager;
     private final MsgUtil msgUtil;
+    private final PinLoginThrottle pinLoginThrottle;
 
 
     public AuthServiceImpl(UserMapper userMapper, PasswordEncoder passwordEncoder,
-                           SessionManager sessionManager, MsgUtil msgUtil) {
+                           SessionManager sessionManager, MsgUtil msgUtil,
+                           PinLoginThrottle pinLoginThrottle) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.sessionManager = sessionManager;
         this.msgUtil = msgUtil;
+        this.pinLoginThrottle = pinLoginThrottle;
     }
 
 
@@ -73,54 +78,61 @@ public class AuthServiceImpl implements AuthService {
         return new UsrIdCheckResponse(true, msgUtil.getMsg("AUTH", "003"));
     }
 
-    /**
-     * 로그인
-     */
+    /** 가입 시 입력한 원래 비밀번호를 확인하고 PIN 해시를 저장합니다. */
     @Override
-    public LoginResponse login(LoginRequest request) {
-
-        System.out.println("===== LOGIN START =====");
-        System.out.println("usrId = " + request.usrId());
-
-        // 1. 사용자 조회
+    public void setupPin(PinSetupRequest request) {
         UserVO user = userMapper.selectByUsrId(request.usrId());
-
-        // 2. 사용자 존재 여부 확인
-        if (user == null) {
-            System.out.println("USER NOT FOUND");
+        if (user == null || !passwordEncoder.matches(request.pwd(), user.getPwd())) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
         }
 
-        // 3. 비밀번호 확인
-        boolean passwordMatches = passwordEncoder.matches(request.pwd(),user.getPwd());
+        user.setSystemUserId(user.getUsrId());
+        user.setPinPwd(passwordEncoder.encode(request.pin()));
+        if (userMapper.updatePinPassword(user) != 1) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, msgUtil.getMsg("SIGNUP", "004"));
+        }
+    }
 
-        if (!passwordMatches) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
+    /** BCrypt PIN을 검증하고 기존 Redis 세션이 있으면 재사용합니다. */
+    @Override
+    public LoginResponse loginWithPin(PinLoginRequest request, String remoteAddress) {
+        if (pinLoginThrottle.isBlocked(request.usrId(), remoteAddress)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    msgUtil.getMsg("AUTH", "006"));
         }
 
-        // 4. Redis 세션 생성
+        UserVO user = userMapper.selectByUsrId(request.usrId());
+        if (user == null || user.getPinPwd() == null
+                || !passwordEncoder.matches(request.pin(), user.getPinPwd())) {
+            pinLoginThrottle.recordFailure(request.usrId(), remoteAddress);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, msgUtil.getMsg("AUTH", "001"));
+        }
+        pinLoginThrottle.clearFailures(request.usrId(), remoteAddress);
+
         UserSession session = new UserSession(
-                                                user.getUsrId(),
-                                                user.getUsrNm(),
-                                                user.getRol(),
-                                                user.getHpNo(),
-                                                user.getAdr(),
-                                                user.getDtlAdr()
-                                        );
-
-        String accessToken = sessionManager.createSession(session, request.rememberMe());
-
-        // 5. 사용자 정보 생성
+                user.getUsrId(),
+                user.getUsrNm(),
+                user.getRol(),
+                user.getHpNo(),
+                user.getAdr(),
+                user.getDtlAdr()
+        );
+        UserSession existingSession = sessionManager.getSession(request.sessionId());
+        String accessToken;
+        if (existingSession != null && existingSession.usrId().equals(user.getUsrId())) {
+            accessToken = request.sessionId();
+        } else {
+            sessionManager.deleteSession(request.sessionId());
+            accessToken = sessionManager.createSession(session, false);
+        }
         UserInfoResponse userInfo = new UserInfoResponse(
-                                                        user.getUsrId(),
-                                                        user.getUsrNm(),
-                                                        user.getRol(),
-                                                        user.getHpNo(),
-                                                        user.getAdr(),
-                                                        user.getDtlAdr()
-                                                        );
-
-        // 6. 로그인 응답
-        return new LoginResponse(accessToken, "Bearer", sessionManager.getExpiresInSeconds(request.rememberMe()), userInfo);
+                user.getUsrId(),
+                user.getUsrNm(),
+                user.getRol(),
+                user.getHpNo(),
+                user.getAdr(),
+                user.getDtlAdr()
+        );
+        return new LoginResponse(accessToken, "Bearer", sessionManager.getExpiresInSeconds(false), userInfo);
     }
 }

@@ -16,6 +16,8 @@ public interface UserMapper {
 
     int updatePassword(UserVO user);
 
+    int updatePinPassword(UserVO user);
+
     int updateAddress(UserVO user);
 
     int updateProfileImageFileSeq(UserVO user);

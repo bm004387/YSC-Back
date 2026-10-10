@@ -6,8 +6,9 @@ import com.buc.ysc.auth.vo.record.UsrIdCheckResponse;
 import com.buc.ysc.auth.vo.response.LoginResponse;
 import com.buc.ysc.auth.vo.response.SignupResponse;
 import com.buc.ysc.auth.vo.response.UserInfoResponse;
-import com.buc.ysc.auth.vo.record.LoginRequest;
 import com.buc.ysc.auth.vo.record.SignupRequest;
+import com.buc.ysc.auth.vo.record.PinLoginRequest;
+import com.buc.ysc.auth.vo.record.PinSetupRequest;
 import com.buc.ysc.util.MsgUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -43,12 +44,20 @@ public class AuthController {
         return ResponseEntity.ok(authService.checkUsrId(usrId.trim()));
     }
 
-    /**
-     * 로그인
-     */
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    /** 가입 시 전달한 비밀번호를 확인한 뒤 PIN 해시를 저장합니다. */
+    @PostMapping("/pin/setup")
+    public ResponseEntity<Void> setupPin(@Valid @RequestBody PinSetupRequest request) {
+        authService.setupPin(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    /** PIN을 검증하고 Redis 로그인 세션을 발급합니다. */
+    @PostMapping("/pin/login")
+    public ResponseEntity<LoginResponse> loginWithPin(
+            @Valid @RequestBody PinLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(authService.loginWithPin(request, httpRequest.getRemoteAddr()));
     }
 
     /** 저장된 access token으로 로그인 세션을 확인합니다. */
